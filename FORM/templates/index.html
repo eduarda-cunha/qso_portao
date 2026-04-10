@@ -1,0 +1,49 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+            <h2 style="margin: 0;">📋 Painel de Controle</h2>
+            <small style="color: #666;">Data: {{ hoje }}</small>
+        </div>
+        <a href="/formulario" class="btn" style="background: #2e7d32; color: white;">+ NOVO REGISTRO</a>
+    </div>
+
+    {% if registros %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f8f9fa; border-bottom: 2px solid var(--amarelo);">
+                    <th style="padding: 12px; text-align: left;">Prestador / Empresa</th>
+                    <th style="padding: 12px; text-align: left;">Destino</th>
+                    <th style="padding: 12px; text-align: center;">Entrada</th>
+                    <th style="padding: 12px; text-align: center;">Saída</th>
+                    <th style="padding: 12px; text-align: center;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reg in registros %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 12px;"><strong>{{ reg.nome_prestador }}</strong><br><small>{{ reg.empresa }}</small></td>
+                    <td style="padding: 12px;">{{ reg.destino_entrega }}</td>
+                    <td style="padding: 12px; text-align: center;">{{ reg.hora_entrada }}</td>
+                    <td style="padding: 12px; text-align: center;">
+                        {% if reg.hora_saida %}<span style="color: green; font-weight: bold;">{{ reg.hora_saida }}</span>
+                        {% else %}<span style="color: #d32f2f; font-style: italic;">Pendente</span>{% endif %}
+                    </td>
+                    <td style="padding: 12px; text-align: center;">
+                        <a href="/formulario/{{ reg.uuid }}" class="btn" style="padding: 5px 10px; font-size: 12px;">EDITAR</a>
+                        <a href="/registro/{{ reg.uuid }}" style="text-decoration: none; margin-left: 8px;">🔗</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 50px; border: 2px dashed #ccc; border-radius: 8px;">
+        <h3 style="color: #888;">Nenhum Registro Criado no Dia Atual</h3>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

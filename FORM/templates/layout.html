@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Registro de Entradas e Serviços - Praia Clube</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚚</text></svg>">
+
+    <style>
+        :root { --amarelo: #FFD700; --preto: #000000; --fundo: #f4f4f4; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--fundo); }
+        .navbar { background: var(--preto); color: var(--amarelo); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--amarelo); }
+        .nav-links a { color: white; text-decoration: none; margin-left: 20px; font-weight: bold; }
+        .container { display: flex; justify-content: center; padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 1100px; }
+        .btn { background: var(--preto); color: var(--amarelo); border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; transition: 0.2s; }
+        .btn:hover { background: #333; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div><strong>🚚 Entradas e Serviços</strong></div>
+        <div class="nav-links"><a href="/">Início</a><a href="/gestao">Gestor</a></div>
+    </nav>
+    <div class="container">{% block content %}{% endblock %}</div>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="card">
+    <h2>📋 Relatório de Auditoria</h2>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+        <thead>
+            <tr style="background: var(--preto); color: var(--amarelo);">
+                <th style="padding: 10px;">Data</th>
+                <th style="padding: 10px;">Prestador</th>
+                <th style="padding: 10px;">CPF</th>
+                <th style="padding: 10px;">Entrada</th>
+                <th style="padding: 10px;">Saída</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reg in registros %}
+            <tr style="border-bottom: 1px solid #ddd;">
+                <td style="padding: 10px;">{{ reg.data }}</td>
+                <td style="padding: 10px;">{{ reg.nome_prestador }}</td>
+                <td style="padding: 10px;">{{ reg.cpf }}</td>
+                <td style="padding: 10px;">{{ reg.hora_entrada }}</td>
+                <td style="padding: 10px;">{{ reg.hora_saida or '--:--' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

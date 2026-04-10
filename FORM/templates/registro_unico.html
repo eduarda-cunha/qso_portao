@@ -1,0 +1,12 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="card" style="max-width: 500px; text-align: center; border-top: 10px solid var(--amarelo);">
+    <h3>Comprovante de Entrada</h3>
+    <hr>
+    <p><strong>Nome:</strong> {{ reg.nome_prestador }}</p>
+    <p><strong>Empresa:</strong> {{ reg.empresa }}</p>
+    <p><strong>Entrada:</strong> {{ reg.data }} | {{ reg.hora_entrada }}</p>
+    <p><strong>Destino:</strong> {{ reg.destino_entrega }}</p>
+    <button onclick="window.print()" class="btn">IMPRIMIR</button>
+</div>
+{% endblock %}

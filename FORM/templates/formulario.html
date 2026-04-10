@@ -1,0 +1,50 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>{% if reg %}📝 Editar Registro{% else %}🆕 Novo Registro{% endif %}</h2>
+        <a href="/" style="color: #666; text-decoration: none;">⬅️ Voltar</a>
+    </div>
+
+    <form action="{% if reg %}/edit/{{ reg.uuid }}{% else %}/add{% endif %}" method="post">
+        <style>
+            .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+            .full { grid-column: 1 / -1; }
+            label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #444; }
+            input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+            input:required { border-left: 4px solid #d32f2f; }
+            .sessao { background: #eee; padding: 8px; grid-column: 1 / -1; font-weight: bold; font-size: 13px; margin-top: 10px; border-radius: 4px; }
+            .saida-input { background: #fffde7; border: 2px solid var(--amarelo) !important; font-weight: bold; }
+        </style>
+
+        <div class="grid">
+            <div class="sessao">📍 LOCALIZAÇÃO E HORÁRIO</div>
+            <div><label>Data *</label><input type="date" name="data" value="{{ reg.data if reg else '' }}" required></div>
+            <div><label>Horário Entrada</label><input type="time" name="hora_entrada" value="{{ reg.hora_entrada if reg else '' }}"></div>
+            <div><label style="color:red">Horário Saída</label><input type="time" name="hora_saida" class="saida-input" value="{{ reg.hora_saida if reg else '' }}"></div>
+            <div><label>Portão *</label><input type="text" name="portao" value="{{ reg.portao if reg else '' }}" required></div>
+            <div><label>Setor *</label><input type="text" name="setor" value="{{ reg.setor if reg else '' }}" required></div>
+
+            <div class="sessao">👤 PRESTADOR</div>
+            <div class="full"><label>Nome Completo *</label><input type="text" name="nome_prestador" value="{{ reg.nome_prestador if reg else '' }}" required></div>
+            <div><label>RG</label><input type="text" name="rg" value="{{ reg.rg if reg else '' }}"></div>
+            <div><label>CPF *</label><input type="text" name="cpf" value="{{ reg.cpf if reg else '' }}" required></div>
+            <div><label>Data Nascimento *</label><input type="date" name="data_nascimento" value="{{ reg.data_nascimento if reg else '' }}" required></div>
+
+            <div class="sessao">🏢 EMPRESA / VEÍCULO</div>
+            <div class="full"><label>Empresa *</label><input type="text" name="empresa" value="{{ reg.empresa if reg else '' }}" required></div>
+            <div><label>Veículo</label><input type="text" name="veiculo" value="{{ reg.veiculo if reg else '' }}"></div>
+            <div><label>Placa</label><input type="text" name="placa" value="{{ reg.placa if reg else '' }}"></div>
+
+            <div class="sessao">🛠️ SERVIÇO</div>
+            <div class="full"><label>Serviço Realizado *</label><input type="text" name="servico" value="{{ reg.servico if reg else '' }}" required></div>
+            <div class="full"><label>Destino *</label><input type="text" name="destino_entrega" value="{{ reg.destino_entrega if reg else '' }}" required></div>
+            
+            <div class="sessao">🤝 RESPONSÁVEIS</div>
+            <div><label>Colaborador Acompanhou</label><input type="text" name="colaborador_acompanhou" value="{{ reg.colaborador_acompanhou if reg else '' }}"></div>
+            <div><label>Colaborador do Setor *</label><input type="text" name="colaborador_setor" value="{{ reg.colaborador_setor if reg else '' }}" required></div>
+        </div>
+        <button type="submit" class="btn" style="margin-top:25px; width:100%;">SALVAR INFORMAÇÕES ✅</button>
+    </form>
+</div>
+{% endblock %}
