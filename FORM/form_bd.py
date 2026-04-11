@@ -3,10 +3,12 @@ import sqlite3
 def init_db():
     conn = sqlite3.connect('qsoportao.db')
     cursor = conn.cursor()
+    # Criando a tabela com a coluna 'criado_por' para isolar os registros
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS registros (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             uuid TEXT UNIQUE,
+            criado_por TEXT,
             data TEXT, hora_entrada TEXT, hora_saida TEXT, portao TEXT, setor TEXT,
             nome_prestador TEXT NOT NULL, rg TEXT, cpf TEXT, data_nascimento TEXT,
             cnh TEXT, categoria TEXT, vencimento_cnh TEXT, empresa TEXT,
@@ -19,4 +21,4 @@ def init_db():
 
 if __name__ == "__main__":
     init_db()
-    print("Banco de dados configurado!")
+    print(" Banco de dados configurado com sucesso!")
