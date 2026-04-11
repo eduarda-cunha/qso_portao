@@ -9,6 +9,7 @@ app = Flask(__name__)
 app.secret_key = "seguranca_praia_clube"
 auth = HTTPBasicAuth()
 
+# Acesso Alfa
 users = {"admin": "praia2024"}
 
 @auth.verify_password
@@ -36,13 +37,8 @@ def login():
         if "_" in chave:
             session['usuario'] = chave
             return redirect(url_for('index'))
-        return "Erro: Use nome_sobrenome", 400
+        return "Erro: Formato nome_sobrenome", 400
     return render_template('login.html')
-
-@app.route('/logout')
-def logout():
-    session.pop('usuario', None)
-    return redirect(url_for('login'))
 
 @app.route('/')
 def index():
@@ -84,13 +80,10 @@ def edit(id_unico):
     db.close()
     return redirect(url_for('index'))
 
-@app.route('/gestao')
-@auth.login_required
-def gestao():
-    db = get_db()
-    registros = db.execute('SELECT * FROM registros ORDER BY id DESC').fetchall()
-    db.close()
-    return render_template('gestao.html', registros=registros)
+@app.route('/logout')
+def logout():
+    session.pop('usuario', None)
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0', port=5000)
