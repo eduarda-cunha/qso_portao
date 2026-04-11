@@ -2,29 +2,50 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>🚚 Acesso - Praia Clube</title>
+    <title>Acesso - Praia Clube</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚚</text></svg>">
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 400px; border-top: 8px solid #FFD700; }
+        .login-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 420px; border-top: 8px solid #FFD700; }
         input { width: 100%; padding: 12px; margin: 20px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; text-align: center; }
-        .btn { background: #000; color: #FFD700; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
-        .alerta { background: #fff5f5; color: #c53030; padding: 15px; border-radius: 8px; border: 1px solid #feb2b2; margin-top: 20px; font-size: 13px; text-align: left; line-height: 1.4; }
+        .btn { background: #000; color: #FFD700; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.3s; }
+        .btn:hover { background: #333; }
+        
+        .alerta-container { display: flex; justify-content: center; width: 100%; }
+        .alerta-box { 
+            background: #fff5f5; 
+            color: #c53030; 
+            padding: 20px; 
+            border-radius: 8px; 
+            border: 1px solid #feb2b2; 
+            margin-top: 25px; 
+            max-width: 350px; 
+            text-align: center; 
+            line-height: 1.5;
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
     <div class="login-card">
         <h2>🚚 Identificação Colaborador</h2>
-        <p><strong>Chave de Acesso Única</strong><br>Use o formato: nome_sobrenome</p>
+        <p><strong>Chave de Acesso Única</strong><br>Formato: nome_sobrenome</p>
         
         <form action="/login" method="post">
-            <input type="text" name="chave_acesso" placeholder="ex: eduarda_cunha" required pattern=".*_.*">
-            <button type="submit" class="btn">ENTRAR NO SISTEMA</button>
+            <input type="text" name="chave_acesso" placeholder="ex: abacatudo_alves" required pattern=".*_.*">
+            <button type="submit" class="btn">ACESSAR SISTEMA</button>
         </form>
 
-        <div class="alerta">
-            <strong>⚠️ ATENÇÃO EXTREMA ⚠️</strong><br>
-            É muito importante que você **lembre ou anote** o nome inserido exatamente como digitou. Caso entre com um nome diferente no futuro, você acessará um ambiente vazio e não verá seus registros anteriores.
+        <div class="alerta-container">
+            <div class="alerta-box">
+                <strong>⚠️ ATENÇÃO EXTREMA ⚠️</strong><br>
+                É fundamental que você <strong>LEMBRE ou ANOTE</strong> o nome inserido a primeira vez. Caso seja inserido um nome diferente, você não verá seus registros anteriores.
+                
+                <hr style="border: 0; border-top: 1px solid #feb2b2; margin: 15px 0;">
+                
+                <strong>GENTILEZA RESPEITAR O ACESSO DOS DEMAIS COLEGAS</strong><br>
+                Não entre no espaço de registro do outro. Agradecemos!
+            </div>
         </div>
     </div>
 </body>

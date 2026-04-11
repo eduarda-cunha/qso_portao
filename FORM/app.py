@@ -9,7 +9,6 @@ app = Flask(__name__)
 app.secret_key = "seguranca_praia_clube"
 auth = HTTPBasicAuth()
 
-# Acesso do Gestor (Auditoria)
 users = {"admin": "praia2024"}
 
 @auth.verify_password
@@ -17,7 +16,6 @@ def verify_password(username, password):
     if username in users and users.get(username) == password:
         return username
 
-# Caminho do banco corrigido para evitar erros de localidade
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "qsoportao.db")
 
 def get_db():
@@ -31,8 +29,6 @@ CAMPOS = [
     'veiculo', 'placa', 'servico', 'destino_entrega', 'colaborador_acompanhou', 'colaborador_setor'
 ]
 
-# --- ROTAS DE ACESSO ---
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -40,7 +36,7 @@ def login():
         if "_" in chave:
             session['usuario'] = chave
             return redirect(url_for('index'))
-        return "Erro: Formato inválido. Use nome_sobrenome", 400
+        return "Erro: Use nome_sobrenome", 400
     return render_template('login.html')
 
 @app.route('/logout')
@@ -48,33 +44,14 @@ def logout():
     session.pop('usuario', None)
     return redirect(url_for('login'))
 
-# --- ROTAS DO SISTEMA ---
-
 @app.route('/')
 def index():
-    if 'usuario' not in session:
-        return redirect(url_for('login'))
-    
+    if 'usuario' not in session: return redirect(url_for('login'))
     db = get_db()
-    # Filtra para mostrar APENAS os registros do usuário logado
-    registros = db.execute(
-        'SELECT * FROM registros WHERE criado_por = ? ORDER BY id DESC LIMIT 20', 
-        (session['usuario'],)
-    ).fetchall()
+    registros = db.execute('SELECT * FROM registros WHERE criado_por = ? ORDER BY id DESC', (session['usuario'],)).fetchall()
     db.close()
     hoje = datetime.now().strftime('%d/%m/%Y')
     return render_template('index.html', registros=registros, hoje=hoje)
-
-@app.route('/formulario')
-@app.route('/formulario/<id_unico>')
-def formulario(id_unico=None):
-    if 'usuario' not in session: return redirect(url_for('login'))
-    db = get_db()
-    registro = None
-    if id_unico:
-        registro = db.execute('SELECT * FROM registros WHERE uuid = ?', (id_unico,)).fetchone()
-    db.close()
-    return render_template('formulario.html', reg=registro)
 
 @app.route('/add', methods=['POST'])
 def add():
@@ -87,6 +64,15 @@ def add():
     db.commit()
     db.close()
     return redirect(url_for('index'))
+
+@app.route('/formulario')
+@app.route('/formulario/<id_unico>')
+def formulario(id_unico=None):
+    if 'usuario' not in session: return redirect(url_for('login'))
+    db = get_db()
+    registro = db.execute('SELECT * FROM registros WHERE uuid = ?', (id_unico,)).fetchone() if id_unico else None
+    db.close()
+    return render_template('formulario.html', reg=registro)
 
 @app.route('/edit/<id_unico>', methods=['POST'])
 def edit(id_unico):
@@ -106,13 +92,5 @@ def gestao():
     db.close()
     return render_template('gestao.html', registros=registros)
 
-@app.route('/registro/<id_unico>')
-def ver_registro(id_unico):
-    db = get_db()
-    registro = db.execute('SELECT * FROM registros WHERE uuid = ?', (id_unico,)).fetchone()
-    db.close()
-    return render_template('registro_unico.html', reg=registro)
-
 if __name__ == '__main__':
-    # host='0.0.0.0' permite acesso via celular/tablet na mesma rede
     app.run(debug=True, host='0.0.0.0')

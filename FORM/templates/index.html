@@ -1,19 +1,23 @@
 {% extends 'layout.html' %}
+
 {% block content %}
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
         <div>
-            <h2 style="margin: 0;">📋 Painel de Controle</h2>
-            <small style="color: #666;">Data: {{ hoje }}</small>
+            <h2 style="margin: 0; color: #333;">📋 Meus Registros</h2>
+            <p style="margin: 5px 0 0; color: #666; font-size: 14px;">
+                Exibindo entradas registradas por: <strong>{{ session['usuario'] }}</strong>
+            </p>
         </div>
-        <a href="/formulario" class="btn" style="background: #2e7d32; color: white;">+ NOVO REGISTRO</a>
+        <a href="/formulario" class="btn btn-novo" style="box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            + NOVO REGISTRO
+        </a>
     </div>
 
-    {% if registros %}
     <div style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse;">
+        <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
             <thead>
-                <tr style="background: #f8f9fa; border-bottom: 2px solid var(--amarelo);">
+                <tr style="background-color: #f8f9fa; border-bottom: 2px solid #FFD700;">
                     <th style="padding: 12px; text-align: left;">Prestador / Empresa</th>
                     <th style="padding: 12px; text-align: left;">Destino</th>
                     <th style="padding: 12px; text-align: center;">Entrada</th>
@@ -23,27 +27,45 @@
             </thead>
             <tbody>
                 {% for reg in registros %}
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 12px;"><strong>{{ reg.nome_prestador }}</strong><br><small>{{ reg.empresa }}</small></td>
-                    <td style="padding: 12px;">{{ reg.destino_entrega }}</td>
-                    <td style="padding: 12px; text-align: center;">{{ reg.hora_entrada }}</td>
-                    <td style="padding: 12px; text-align: center;">
-                        {% if reg.hora_saida %}<span style="color: green; font-weight: bold;">{{ reg.hora_saida }}</span>
-                        {% else %}<span style="color: #d32f2f; font-style: italic;">Pendente</span>{% endif %}
+                <tr style="border-bottom: 1px solid #eee; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#fffdef'" onmouseout="this.style.backgroundColor='transparent'">
+                    <td style="padding: 12px;">
+                        <div style="font-weight: bold; color: #222;">{{ reg.nome_prestador }}</div>
+                        <div style="font-size: 12px; color: #666;">{{ reg.empresa }}</div>
+                    </td>
+                    <td style="padding: 12px; color: #444; font-size: 14px;">
+                        {{ reg.destino_entrega }}
+                    </td>
+                    <td style="padding: 12px; text-align: center; font-weight: 500;">
+                        {{ reg.hora_entrada }}
                     </td>
                     <td style="padding: 12px; text-align: center;">
-                        <a href="/formulario/{{ reg.uuid }}" class="btn" style="padding: 5px 10px; font-size: 12px;">EDITAR</a>
-                        <a href="/registro/{{ reg.uuid }}" style="text-decoration: none; margin-left: 8px;">🔗</a>
+                        {% if reg.hora_saida %}
+                            <span style="color: #2e7d32; font-weight: bold;">{{ reg.hora_saida }}</span>
+                        {% else %}
+                            <span style="color: #d32f2f; font-style: italic; font-size: 13px;">⚠️ Pendente</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px; text-align: center;">
+                        <a href="/formulario/{{ reg.uuid }}" 
+                           style="background: #000; color: #FFD700; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold;">
+                           EDITAR
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="padding: 40px; text-align: center; color: #999;">
+                        <div style="font-size: 40px; margin-bottom: 10px;">🚚</div>
+                        <p>Nenhum registro encontrado no seu nome hoje.</p>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    {% else %}
-    <div style="text-align: center; padding: 50px; border: 2px dashed #ccc; border-radius: 8px;">
-        <h3 style="color: #888;">Nenhum Registro Encontrado</h3>
+    
+    <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; text-align: right;">
+        <small style="color: #888;">Data atual: {{ hoje }}</small>
     </div>
-    {% endif %}
 </div>
 {% endblock %}
