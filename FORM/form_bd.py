@@ -12,12 +12,18 @@ def init_db():
             nome_prestador TEXT NOT NULL, rg TEXT, cpf TEXT, data_nascimento TEXT,
             cnh TEXT, categoria TEXT, vencimento_cnh TEXT, empresa TEXT,
             veiculo TEXT, placa TEXT, servico TEXT, destino_entrega TEXT NOT NULL,
-            colaborador_acompanhou TEXT, colaborador_setor TEXT
+            colaborador_acompanhou TEXT, colaborador_setor TEXT,
+            observacoes TEXT
         )
     ''')
+    try:
+        cursor.execute('ALTER TABLE registros ADD COLUMN observacoes TEXT')
+    except:
+        pass
+    
     conn.commit()
     conn.close()
 
 if __name__ == "__main__":
     init_db()
-    print("Banco de dados pronto!")
+    print("Banco de dados 'qsoportao.db' atualizado!")

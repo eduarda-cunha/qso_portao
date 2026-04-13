@@ -2,7 +2,7 @@
 {% block content %}
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2>{% if reg %}📝 Editar Registro{% else %}🆕 Novo Registro{% endif %}</h2>
+        <h2>{% if reg %}📝 Editar Registro{% else %}Novo Registro{% endif %}</h2>
         <a href="/" style="color: #666; text-decoration: none;">⬅️ Voltar</a>
     </div>
 
@@ -11,10 +11,11 @@
             .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
             .full { grid-column: 1 / -1; }
             label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #444; }
-            input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+            input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-family: inherit; }
             input:required { border-left: 4px solid #d32f2f; }
             .sessao { background: #eee; padding: 8px; grid-column: 1 / -1; font-weight: bold; font-size: 13px; margin-top: 10px; border-radius: 4px; }
             .saida-input { background: #fffde7; border: 2px solid var(--amarelo) !important; font-weight: bold; }
+            textarea { resize: vertical; min-height: 80px; border: 1px solid #ccc; }
         </style>
 
         <div class="grid">
@@ -43,8 +44,15 @@
             <div class="sessao">🤝 RESPONSÁVEIS</div>
             <div><label>Colaborador Acompanhou</label><input type="text" name="colaborador_acompanhou" value="{{ reg.colaborador_acompanhou if reg else '' }}"></div>
             <div><label>Colaborador do Setor *</label><input type="text" name="colaborador_setor" value="{{ reg.colaborador_setor if reg else '' }}" required></div>
+
+            <div class="sessao">📝 INFORMAÇÕES ADICIONAIS</div>
+            <div class="full">
+                <label>Observações (Máx. 500 caracteres)</label>
+                <textarea name="observacoes" maxlength="500" placeholder="Descreva a alteração (ex: Colaborador adentrou de chinelas, 'Nome do Diretor' autorizou!)...">{{ reg.observacoes if reg else '' }}</textarea>
+            </div>
         </div>
-        <button type="submit" class="btn" style="margin-top:25px; width:100%;">SALVAR ✅</button>
+        
+        <button type="submit" class="btn" style="margin-top:25px; width:100%; background: #000; color: #FFD700; border-radius: 12px; font-weight: bold; padding: 15px; cursor: pointer;">SALVAR REGISTRO ✅</button>
     </form>
 </div>
 {% endblock %}

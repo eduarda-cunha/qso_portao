@@ -1,16 +1,17 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, send_file
 from flask_httpauth import HTTPBasicAuth
 import sqlite3
 import os
 import uuid
+import pandas as pd
+from io import BytesIO
 from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "seguranca_praia_clube"
 auth = HTTPBasicAuth()
 
-# Acesso Alfa
-users = {"admin": "praia2024"}
+users = {"admin": "praia11037"}
 
 @auth.verify_password
 def verify_password(username, password):
@@ -27,7 +28,8 @@ def get_db():
 CAMPOS = [
     'data', 'hora_entrada', 'hora_saida', 'portao', 'setor', 'nome_prestador', 'rg', 'cpf', 
     'data_nascimento', 'cnh', 'categoria', 'vencimento_cnh', 'empresa', 
-    'veiculo', 'placa', 'servico', 'destino_entrega', 'colaborador_acompanhou', 'colaborador_setor'
+    'veiculo', 'placa', 'servico', 'destino_entrega', 'colaborador_acompanhou', 
+    'colaborador_setor', 'observacoes'
 ]
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -37,7 +39,7 @@ def login():
         if "_" in chave:
             session['usuario'] = chave
             return redirect(url_for('index'))
-        return "Erro: Formato nome_sobrenome", 400
+        return "Erro: Use o formato nome_sobrenome", 400
     return render_template('login.html')
 
 @app.route('/')
@@ -49,18 +51,6 @@ def index():
     hoje = datetime.now().strftime('%d/%m/%Y')
     return render_template('index.html', registros=registros, hoje=hoje)
 
-@app.route('/add', methods=['POST'])
-def add():
-    if 'usuario' not in session: return redirect(url_for('login'))
-    codigo = str(uuid.uuid4())[:8]
-    dados = [codigo, session['usuario']] + [request.form.get(f) for f in CAMPOS]
-    db = get_db()
-    placeholder = ",".join(["?"] * 21)
-    db.execute(f'INSERT INTO registros (uuid, criado_por, {", ".join(CAMPOS)}) VALUES ({placeholder})', dados)
-    db.commit()
-    db.close()
-    return redirect(url_for('index'))
-
 @app.route('/formulario')
 @app.route('/formulario/<id_unico>')
 def formulario(id_unico=None):
@@ -69,6 +59,18 @@ def formulario(id_unico=None):
     registro = db.execute('SELECT * FROM registros WHERE uuid = ?', (id_unico,)).fetchone() if id_unico else None
     db.close()
     return render_template('formulario.html', reg=registro)
+
+@app.route('/add', methods=['POST'])
+def add():
+    if 'usuario' not in session: return redirect(url_for('login'))
+    codigo = str(uuid.uuid4())[:8]
+    dados = [codigo, session['usuario']] + [request.form.get(f) for f in CAMPOS]
+    db = get_db()
+    placeholder = ",".join(["?"] * 22)
+    db.execute(f'INSERT INTO registros (uuid, criado_por, {", ".join(CAMPOS)}) VALUES ({placeholder})', dados)
+    db.commit()
+    db.close()
+    return redirect(url_for('index'))
 
 @app.route('/edit/<id_unico>', methods=['POST'])
 def edit(id_unico):
@@ -79,6 +81,42 @@ def edit(id_unico):
     db.commit()
     db.close()
     return redirect(url_for('index'))
+
+@app.route('/gestao')
+@auth.login_required
+def gestao():
+    db = get_db()
+    registros = db.execute('SELECT * FROM registros ORDER BY id DESC').fetchall()
+    db.close()
+    return render_template('gestao.html', registros=registros)
+
+@app.route('/exportar')
+@auth.login_required
+def exportar():
+    try:
+        db = get_db()
+        query = 'SELECT * FROM registros ORDER BY id DESC'
+        df = pd.read_sql_query(query, db)
+        db.close()
+
+        if df.empty:
+            return "Nenhum dado encontrado para exportar", 404
+
+        df.columns = [c.replace('_', ' ').upper() for c in df.columns]
+
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Relatorio_Portaria')
+        
+        output.seek(0)
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=f'Relatorio_Portaria_{datetime.now().strftime("%d_%m_%Y")}.xlsx'
+        )
+    except Exception as e:
+        return f"Erro ao gerar Excel: {str(e)}", 500
 
 @app.route('/logout')
 def logout():
