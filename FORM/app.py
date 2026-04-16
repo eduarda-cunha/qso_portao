@@ -29,13 +29,24 @@ CAMPOS = [
     'data', 'hora_entrada', 'hora_saida', 'portao', 'setor', 'nome_prestador', 'rg', 'cpf', 
     'data_nascimento', 'cnh', 'categoria', 'vencimento_cnh', 'empresa', 
     'veiculo', 'placa', 'servico', 'destino_entrega', 'colaborador_acompanhou', 
-    'colaborador_setor', 'observacoes'
+    'colaborador_setor', 'assinatura_acompanhante', 'observacoes', 'assinatura_prestador', 
+    'justificativa_falta_assinatura', 'colaboradores_adicionais'
 ]
+
+def init_db():
+    conn = get_db()
+    cursor = conn.cursor()
+    colunas = ['id INTEGER PRIMARY KEY AUTOINCREMENT', 'uuid TEXT', 'criado_por TEXT']
+    for campo in CAMPOS:
+        colunas.append(f"{campo} TEXT")
+    cursor.execute(f"CREATE TABLE IF NOT EXISTS registros ({', '.join(colunas)})")
+    conn.commit()
+    conn.close()
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        chave = request.form.get('chave_acesso').lower().strip()
+        chave = request.form.get('chave_acesso', '').lower().strip()
         if "_" in chave:
             session['usuario'] = chave
             return redirect(url_for('index'))
@@ -58,65 +69,29 @@ def formulario(id_unico=None):
     db = get_db()
     registro = db.execute('SELECT * FROM registros WHERE uuid = ?', (id_unico,)).fetchone() if id_unico else None
     db.close()
-    return render_template('formulario.html', reg=registro)
+    hoje_iso = datetime.now().strftime('%Y-%m-%d')
+    return render_template('formulario.html', reg=registro, hoje_iso=hoje_iso)
 
 @app.route('/add', methods=['POST'])
 def add():
     if 'usuario' not in session: return redirect(url_for('login'))
     codigo = str(uuid.uuid4())[:8]
-    dados = [codigo, session['usuario']] + [request.form.get(f) for f in CAMPOS]
+    dados = [codigo, session['usuario']] + [request.form.get(f, '') for f in CAMPOS]
     db = get_db()
-    placeholder = ",".join(["?"] * 22)
+    placeholder = ",".join(["?"] * (len(CAMPOS) + 2))
     db.execute(f'INSERT INTO registros (uuid, criado_por, {", ".join(CAMPOS)}) VALUES ({placeholder})', dados)
     db.commit()
     db.close()
     return redirect(url_for('index'))
 
-@app.route('/edit/<id_unico>', methods=['POST'])
-def edit(id_unico):
-    db = get_db()
-    set_query = ", ".join([f"{f} = ?" for f in CAMPOS])
-    dados = [request.form.get(f) for f in CAMPOS] + [id_unico]
-    db.execute(f'UPDATE registros SET {set_query} WHERE uuid = ?', dados)
-    db.commit()
-    db.close()
-    return redirect(url_for('index'))
-
-@app.route('/gestao')
+@app.route('/gestor')
 @auth.login_required
-def gestao():
+def gestor():
     db = get_db()
     registros = db.execute('SELECT * FROM registros ORDER BY id DESC').fetchall()
     db.close()
-    return render_template('gestao.html', registros=registros)
-
-@app.route('/exportar')
-@auth.login_required
-def exportar():
-    try:
-        db = get_db()
-        query = 'SELECT * FROM registros ORDER BY id DESC'
-        df = pd.read_sql_query(query, db)
-        db.close()
-
-        if df.empty:
-            return "Nenhum dado encontrado para exportar", 404
-
-        df.columns = [c.replace('_', ' ').upper() for c in df.columns]
-
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='Relatorio_Portaria')
-        
-        output.seek(0)
-        return send_file(
-            output,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            as_attachment=True,
-            download_name=f'Relatorio_Portaria_{datetime.now().strftime("%d_%m_%Y")}.xlsx'
-        )
-    except Exception as e:
-        return f"Erro ao gerar Excel: {str(e)}", 500
+    hoje = datetime.now().strftime('%d/%m/%Y')
+    return render_template('gestor.html', registros=registros, hoje=hoje)
 
 @app.route('/logout')
 def logout():
@@ -124,4 +99,5 @@ def logout():
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
+    init_db()
     app.run(debug=True, host='0.0.0.0', port=5000)

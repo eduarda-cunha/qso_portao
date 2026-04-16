@@ -3,33 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro Entrada e Serviços - Praia Clube</title>
+    <title>Entradas e Serviços</title>
+
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚚</text></svg>">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --amarelo: #FFD700; --preto: #000; --fundo: #f4f4f4; --verde: #2e7d32; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--fundo); }
-        .navbar { background: var(--preto); color: var(--amarelo); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--amarelo); }
-        .nav-links a { color: white; text-decoration: none; margin-left: 15px; font-weight: bold; font-size: 14px; }
-        .container { display: flex; justify-content: center; padding: 20px; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 1100px; }
+        body { font-family: 'Inter', sans-serif; background-color: #f5f5f5; margin: 0; }
         
-        /* Botões Arredondados */
-        .btn { padding: 10px 20px; border-radius: 12px; font-weight: bold; text-decoration: none; display: inline-block; border: none; cursor: pointer; transition: 0.2s; }
-        .btn-novo { background: var(--verde); color: white; }
-        .btn-novo:hover { background: #1b5e20; }
-        .user-tag { background: #333; padding: 4px 10px; border-radius: 6px; font-size: 12px; }
+        nav { 
+            background-color: #000; 
+            color: #fff; 
+            padding: 10px 30px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            border-bottom: 3px solid #FFD700; /* Linha Amarela */
+        }
+        .logo { font-weight: bold; color: #FFD700; display: flex; align-items: center; gap: 8px; text-decoration: none; }
+        .nav-links { display: flex; gap: 20px; align-items: center; }
+        .nav-links a { color: #fff; text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.3s; }
+        .nav-links a:hover { color: #FFD700; }
+        .user-tag { background: #333; padding: 5px 12px; border-radius: 20px; color: #FFD700; font-size: 12px; }
+        .link-sair { color: #ff4d4d !important; font-weight: bold; }
+
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .card { background: #fff; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+
+        .titulo-caminhao::before { content: "🚚 "; }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div><strong>🚚 Entradas e Serviços</strong></div>
+    <nav>
+        <a href="/" class="logo">🚚 Entradas e Serviços</a>
         <div class="nav-links">
+            {% if session.get('usuario') %}
             <span class="user-tag">👤 {{ session['usuario'] }}</span>
             <a href="/">Início</a>
-            <a href="/gestao">Gestor</a>
-            <a href="/logout" style="color: #ff4d4d;">Sair</a>
+            <a href="/gestor">Gestor</a>
+            <a href="/logout" class="link-sair">Sair</a>
+            {% endif %}
         </div>
     </nav>
-    <div class="container">{% block content %}{% endblock %}</div>
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
 </body>
 </html>
