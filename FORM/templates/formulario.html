@@ -6,19 +6,16 @@
         <a href="/" style="color: #666; text-decoration: none;">⬅️ Voltar</a>
     </div>
 
-    <form action="{% if reg %}/edit/{{ reg.uuid }}{% else %}/add{% endif %}" method="post" id="formRegistro">
+    <form action="{% if reg %}/formulario/{{ reg.id }}{% else %}/formulario{% endif %}" method="post" id="formRegistro">
         <style>
             .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
             .full { grid-column: 1 / -1; }
             label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #444; }
-            input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-family: inherit; }
-            input[required] { border-left: 5px solid #b22222; }
+            input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 13px; }
+            input[required], select[required] { border-left: 5px solid #b22222; }
             .campo-saida { background-color: #fffde7; border: 1px solid #ffd600; border-left: 5px solid #ffd600; color: #827717; font-weight: bold; }
             .sessao { background: #eee; color: #333; padding: 8px; grid-column: 1 / -1; font-weight: bold; font-size: 13px; margin-top: 15px; border-radius: 4px; display: flex; align-items: center; gap: 8px; }
-            
-            /* Alerta de Menor de Idade */
             .alerta-menor { display: none; background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; padding: 10px; border-radius: 6px; margin-top: 5px; font-size: 12px; font-weight: bold; }
-            
             .colaborador-item { background: #fdfdfd; border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-top: 10px; position: relative; border-left: 5px solid #b22222; }
             .btn-remover { position: absolute; top: 10px; right: 10px; background: #ff4d4d; color: white; border: none; border-radius: 4px; cursor: pointer; padding: 2px 8px; font-size: 10px; }
             .area-assinatura { border: 1px solid #ccc; padding: 10px; text-align: center; border-radius: 6px; background: #fff; margin-top: 5px; display: none; }
@@ -32,20 +29,33 @@
 
         <div class="grid">
             <div class="sessao">📍 LOCALIZAÇÃO E HORÁRIO</div>
-            <div><label>Data *</label><input type="date" name="data" value="{{ reg.data if reg else hoje_iso }}" required></div>
+            <div>
+                <label>Data da Visita *</label>
+                <input type="date" name="data" value="{{ reg.data_iso if reg else hoje_iso }}" required>
+            </div>
             <div><label>Horário Entrada</label><input type="time" name="hora_entrada" value="{{ reg.hora_entrada if reg else '' }}"></div>
             <div><label style="color: red;">Horário Saída</label><input type="time" name="hora_saida" class="campo-saida" value="{{ reg.hora_saida if reg else '' }}"></div>
             <div><label>Portão *</label><input type="text" name="portao" value="{{ reg.portao if reg else '' }}" required></div>
-            <div><label>Setor *</label><input type="text" name="setor" value="{{ reg.setor if reg else '' }}" required></div>
 
             <div class="sessao">👤 PRESTADOR (CONDUTOR)</div>
             <div class="full"><label>Nome Completo *</label><input type="text" name="nome_prestador" value="{{ reg.nome_prestador if reg else '' }}" required></div>
-            <div><label>RG</label><input type="text" name="rg" value="{{ reg.rg if reg else '' }}"></div>
-            <div><label>CPF *</label><input type="text" name="cpf" value="{{ reg.cpf if reg else '' }}" required></div>
+            
             <div>
                 <label>Data Nascimento *</label>
                 <input type="date" name="data_nascimento" id="nasc_principal" onchange="verificarIdade(this, 'aviso_principal')" required>
                 <div id="aviso_principal" class="alerta-menor">⚠️ ATENÇÃO: Colaborador menor de idade detectado!</div>
+            </div>
+
+            <div><label>Número CNH *</label><input type="text" name="cnh_numero" value="{{ reg.cnh_numero if reg else '' }}" required></div>
+            <div><label>Vencimento CNH *</label><input type="date" name="cnh_vencimento" value="{{ reg.cnh_vencimento if reg else '' }}" required></div>
+            <div>
+                <label>Categoria CNH *</label>
+                <select name="cnh_categoria" required>
+                    <option value="">Selecione</option>
+                    {% for cat in ['A', 'B', 'C', 'D', 'E', 'AB', 'AC', 'AD', 'AE'] %}
+                    <option value="{{ cat }}" {% if reg and reg.cnh_categoria == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
             </div>
             
             <div class="sessao">🏢 EMPRESA / VEÍCULO</div>
@@ -54,10 +64,7 @@
             <div><label>Placa</label><input type="text" name="placa" value="{{ reg.placa if reg else '' }}"></div>
 
             <div class="sessao">🛠️ DETALHES DO SERVIÇO</div>
-            <div class="grid full" style="gap: 15px; grid-template-columns: 1fr 1fr; margin: 0; padding: 0;">
-                <div><label>Destino / Contratante *</label><input type="text" name="destino_entrega" value="{{ reg.destino_entrega if reg else '' }}" required></div>
-                <div><label>Serviço a Realizar *</label><input type="text" name="servico" value="{{ reg.servico if reg else '' }}" required></div>
-            </div>
+            <div class="full"><label>Destino / Contratante *</label><input type="text" name="destino_entrega" value="{{ reg.destino_entrega if reg else '' }}" required></div>
             
             <div class="full">
                 <label>Colaborador que acompanhou 
@@ -73,17 +80,19 @@
 
             <div class="sessao">📝 OBSERVAÇÕES</div>
             <div class="full">
-                <textarea name="observacoes" id="obs_campo" placeholder="Descreva alterações no procedimento (ex: Colaborador adentrou de chinelas, 'Nome Pessoa' autorizou)..."></textarea>
+                <textarea name="observacoes" id="obs_campo" placeholder="Caso seja menor de idade, descreva aqui quem autorizou...">{{ reg.observacoes if reg else '' }}</textarea>
             </div>
 
+            {% if not reg %}
             <div class="sessao">🖋️ ASSINATURA PRESTADOR DE SERVIÇO</div>
             <div class="full area-assinatura active">
                 <canvas id="canvas-principal"></canvas><br>
                 <button type="button" class="btn-limpar" onclick="signaturePadPrincipal.clear()">🧹 Limpar Quadro</button>
-                <input type="hidden" name="assinatura_prestador" id="input_assinatura">
+                <input type="hidden" name="assinatura_data" id="input_assinatura">
             </div>
+            {% endif %}
 
-            <div class="sessao">👥 INCLUIR MAIS PRESTADORES DE SERVIÇO</div>
+            <div class="sessao">👥 INCLUIR MAIS PRESTADORES DE SERVIÇO (AJUDANTES)</div>
             <div id="lista-colaboradores" class="full"></div>
             <div class="full">
                 <button type="button" class="btn-add" onclick="adicionarColaborador()"> + Adicionar Outro Colaborador</button>
@@ -91,20 +100,23 @@
             <input type="hidden" name="colaboradores_adicionais" id="colaboradores_json">
         </div>
         
-        <button type="submit" class="btn-submit">SALVAR REGISTRO</button>
+        <button type="submit" class="btn-submit">
+            {% if reg %}SALVAR ALTERAÇÕES / DAR SAÍDA{% else %}SALVAR REGISTRO DE ENTRADA{% endif %}
+        </button>
     </form>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 <script>
     const canvasPrincipal = document.getElementById('canvas-principal');
-    const signaturePadPrincipal = new SignaturePad(canvasPrincipal);
+    const signaturePadPrincipal = canvasPrincipal ? new SignaturePad(canvasPrincipal) : null;
     const canvasAcompanhante = document.getElementById('canvas-acompanhante');
     const padAcompanhante = new SignaturePad(canvasAcompanhante);
 
     let contador = 0;
     let assinaturasExtras = {};
 
+    // FUNÇÃO DE VERIFICAÇÃO DE IDADE
     function verificarIdade(input, idAviso) {
         const dataNasc = new Date(input.value);
         const hoje = new Date();
@@ -115,7 +127,7 @@
         const aviso = document.getElementById(idAviso);
         if (idade < 18) {
             aviso.style.display = 'block';
-            alert("⚠️ ALERTA DE SEGURANÇA: O colaborador é menor de idade ("+idade+" anos). Certifique-se de que possui autorização e descreva nas observações.");
+            alert("⚠️ ALERTA: Colaborador menor de idade ("+idade+" anos). É obrigatório descrever a autorização nas observações.");
         } else {
             aviso.style.display = 'none';
         }
@@ -126,11 +138,15 @@
         div.classList.toggle('active');
         if(div.classList.contains('active')) {
             const canvas = div.querySelector('canvas');
-            const ratio = Math.max(window.devicePixelRatio || 1, 1);
-            canvas.width = canvas.offsetWidth * ratio;
-            canvas.height = canvas.offsetHeight * ratio;
-            canvas.getContext("2d").scale(ratio, ratio);
+            ajustarCanvas(canvas);
         }
+    }
+
+    function ajustarCanvas(canvas) {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
     }
 
     function adicionarColaborador() {
@@ -142,14 +158,13 @@
             <button type="button" class="btn-remover" onclick="removerColaborador(${contador})">✖</button>
             <div class="grid">
                 <div class="full"><label>Nome Completo</label><input type="text" class="extra-nome" required></div>
-                <div><label>CPF</label><input type="text" class="extra-cpf" required></div>
                 <div>
                     <label>Data Nascimento</label>
                     <input type="date" class="extra-nasc" onchange="verificarIdade(this, 'aviso_extra_${contador}')" required>
                     <div id="aviso_extra_${contador}" class="alerta-menor">⚠️ AJUDANTE MENOR DE IDADE!</div>
                 </div>
                 <div class="full">
-                    <label>Assinatura</label>
+                    <label>Assinatura Ajudante</label>
                     <div class="area-assinatura active">
                         <canvas id="canvas-extra-${contador}"></canvas><br>
                         <button type="button" class="btn-limpar" onclick="assinaturasExtras[${contador}].clear()">🧹 Limpar</button>
@@ -159,10 +174,7 @@
         `;
         document.getElementById('lista-colaboradores').appendChild(div);
         const canvas = document.getElementById(`canvas-extra-${contador}`);
-        const ratio = Math.max(window.devicePixelRatio || 1, 1);
-        canvas.width = canvas.offsetWidth * ratio;
-        canvas.height = canvas.offsetHeight * ratio;
-        canvas.getContext("2d").scale(ratio, ratio);
+        ajustarCanvas(canvas);
         assinaturasExtras[contador] = new SignaturePad(canvas);
     }
 
@@ -172,25 +184,30 @@
     }
 
     document.getElementById('formRegistro').onsubmit = function(e) {
-        // Validação extra antes de salvar
-        const avisoPrincipal = document.getElementById('aviso_principal');
+        // BLOQUEIO DE SEGURANÇA: Se houver aviso de menor e observação vazia
+        const avisos = document.querySelectorAll('.alerta-menor');
+        let menorDetectado = false;
+        avisos.forEach(aviso => { if(aviso.style.display === 'block') menorDetectado = true; });
+
         const obs = document.getElementById('obs_campo').value;
-        
-        if (avisoPrincipal.style.display === 'block' && obs.length < 5) {
-            alert("❌ BLOQUEIO: Para colaboradores menores de idade, é obrigatório preencher a observação com detalhes da autorização.");
+        if (menorDetectado && obs.trim().length < 5) {
+            alert("❌ ERRO: Para menores de idade, você deve preencher o campo OBSERVAÇÕES com os detalhes da autorização.");
             e.preventDefault();
             return false;
         }
 
-        if (!signaturePadPrincipal.isEmpty()) document.getElementById('input_assinatura').value = signaturePadPrincipal.toDataURL();
-        if (!padAcompanhante.isEmpty()) document.getElementById('input_assinatura_acompanhante').value = padAcompanhante.toDataURL();
+        if (signaturePadPrincipal && !signaturePadPrincipal.isEmpty()) {
+            document.getElementById('input_assinatura').value = signaturePadPrincipal.toDataURL();
+        }
+        if (!padAcompanhante.isEmpty()) {
+            document.getElementById('input_assinatura_acompanhante').value = padAcompanhante.toDataURL();
+        }
 
         let listaFinal = [];
         document.querySelectorAll('.colaborador-item').forEach(item => {
             const id = item.id.replace('colab-container-', '');
             listaFinal.push({
                 nome: item.querySelector('.extra-nome').value,
-                cpf: item.querySelector('.extra-cpf').value,
                 nasc: item.querySelector('.extra-nasc').value,
                 assinatura: assinaturasExtras[id].isEmpty() ? "" : assinaturasExtras[id].toDataURL()
             });
@@ -199,10 +216,8 @@
     };
 
     window.addEventListener("load", () => {
-        const ratio = Math.max(window.devicePixelRatio || 1, 1);
-        canvasPrincipal.width = canvasPrincipal.offsetWidth * ratio;
-        canvasPrincipal.height = canvasPrincipal.offsetHeight * ratio;
-        canvasPrincipal.getContext("2d").scale(ratio, ratio);
+        if (canvasPrincipal) ajustarCanvas(canvasPrincipal);
+        ajustarCanvas(canvasAcompanhante);
     });
 </script>
 {% endblock %}

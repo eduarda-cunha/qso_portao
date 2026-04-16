@@ -1,84 +1,117 @@
 {% extends 'layout.html' %}
-
 {% block content %}
 <style>
-    :root { --amarelo: #FFD700; } /* Define a cor para os cards */
-    
-    .gestao-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px; }
-    .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 30px; }
-    .stat-card { background: #fff; padding: 20px; border-radius: 12px; text-align: center; border-left: 6px solid var(--amarelo); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .stat-number { font-size: 28px; font-weight: bold; color: #000; display: block; }
-    .stat-label { font-size: 13px; color: #666; text-transform: uppercase; font-weight: bold; }
+    :root { --amarelo: #FFD700; }
+    .gestao-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .filter-panel { background: #000; color: #fff; padding: 20px; border-radius: 12px; margin-bottom: 25px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; align-items: end; }
+    .filter-group { display: flex; flex-direction: column; gap: 5px; }
+    .filter-group label { font-size: 11px; font-weight: bold; color: var(--amarelo); }
+    .filter-group input, .filter-group select { padding: 8px; border-radius: 5px; border: none; font-size: 13px; background: #e0e0e0; color: #333; }
+    .btn-filtrar { background: var(--amarelo); color: #000; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-limpar { background: #444; color: #fff; text-decoration: none; padding: 10px; border-radius: 5px; text-align: center; font-size: 13px; }
+    .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .stat-card { background: #fff; padding: 15px; border-radius: 12px; text-align: center; border-left: 6px solid var(--amarelo); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .stat-number { font-size: 24px; font-weight: bold; display: block; color: #000; }
+    .stat-label { font-size: 11px; color: #666; font-weight: bold; text-transform: uppercase; }
     .table-wrapper { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    .responsive-scroll { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; min-width: 900px; }
-    th { background: #f8f9fa; color: #333; padding: 15px; text-align: left; font-size: 13px; border-bottom: 3px solid var(--amarelo); }
-    td { padding: 15px; border-bottom: 1px solid #eee; font-size: 14px; }
-    .badge { padding: 6px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
-    .badge-open { background: #fff5f5; color: #d32f2f; border: 1px solid #feb2b2; }
-    .badge-closed { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+    th { background: #f8f9fa; padding: 12px; text-align: left; border-bottom: 3px solid var(--amarelo); font-size: 12px; }
+    td { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; }
+    .row-clicavel { cursor: pointer; }
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+    .badge-aberto { background: #ffebeb; color: #d32f2f; }
+    .badge-fechado { background: #ebffeb; color: #2e7d32; }
+    .modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(3px); }
+    .modal-content { background: white; margin: 5vh auto; width: 550px; border-radius: 15px; overflow: hidden; }
+    .modal-header { background: #000; color: var(--amarelo); padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .info-box { border-bottom: 1px solid #eee; padding: 5px 0; }
+    .info-box label { font-size: 10px; color: #888; text-transform: uppercase; display: block; font-weight: bold; }
+    .info-box span { font-size: 14px; font-weight: 500; }
 </style>
 
-<div class="card" style="background: transparent; box-shadow: none; padding: 0;">
-    <div class="gestao-header">
-        <div>
-            <h2 style="margin:0; color: #000;">Painel Geral - Alfas</h2>
-            <p style="color:#666; margin:5px 0 0;">Relatório Geral de Abertura de Portões</p>
-        </div>
-        <a href="/exportar" style="background:#000; color:var(--amarelo); text-decoration: none; padding: 12px 20px; border-radius: 8px; font-weight: bold;">
-            📥 BAIXAR PLANILHA EXCEL
-        </a>
-    </div>
+<div class="gestao-header">
+    <h2>Painel Administrativo</h2>
+    <a href="{{ url_for('exportar', **filtros) }}" style="background:var(--amarelo); color:#000; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; font-size: 14px;">📥 BAIXAR EXCEL DO FILTRO</a>
+</div>
 
-    <div class="stats-container">
-        <div class="stat-card">
-            <span class="stat-number">{{ registros|length }}</span>
-            <span class="stat-label">Total Hoje</span>
-        </div>
-        <div class="stat-card" style="border-left-color: #d32f2f;">
-            <span class="stat-number">
-                {% set abertos = registros|selectattr('hora_saida', 'none')|list|length + registros|selectattr('hora_saida', 'equalto', '')|list|length %}
-                {{ abertos }}
-            </span>
-            <span class="stat-label">QSO Abertos</span>
-        </div>
-        <div class="stat-card" style="border-left-color: #2e7d32;">
-            <span class="stat-number">{{ registros|length - abertos }}</span>
-            <span class="stat-label">Finalizados</span>
-        </div>
+<form method="GET" action="/gestor" class="filter-panel">
+    <div class="filter-group"><label>DATA INICIAL</label><input type="date" name="data_inicio" value="{{ filtros.data_inicio }}"></div>
+    <div class="filter-group"><label>DATA FINAL</label><input type="date" name="data_fim" value="{{ filtros.data_fim }}"></div>
+    <div class="filter-group"><label>COLABORADOR</label><input type="text" name="colaborador" placeholder="Ex: joao" value="{{ filtros.colaborador }}"></div>
+    <div class="filter-group">
+        <label>STATUS</label>
+        <select name="status">
+            <option value="todos" {% if filtros.status == 'todos' %}selected{% endif %}>Todos</option>
+            <option value="aberto" {% if filtros.status == 'aberto' %}selected{% endif %}>Abertos</option>
+            <option value="fechado" {% if filtros.status == 'fechado' %}selected{% endif %}>Finalizados</option>
+        </select>
     </div>
+    <button type="submit" class="btn-filtrar">FILTRAR</button>
+    <a href="/gestor" class="btn-limpar">LIMPAR</a>
+</form>
 
-    <div class="table-wrapper">
-        <div class="responsive-scroll">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Data/Entrada</th>
-                        <th>Colaborador</th>
-                        <th>Prestador / Empresa</th>
-                        <th>Destino</th>
-                        <th style="text-align: center;">Status QSO</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for reg in registros %}
-                    <tr>
-                        <td><strong>{{ reg.data }}</strong><br><small>🕒 {{ reg.hora_entrada }}</small></td>
-                        <td><span style="background: #f0f0f0; padding: 4px 8px; border-radius: 4px; font-size: 12px;">👤 {{ reg.criado_por }}</span></td>
-                        <td><b>{{ reg.nome_prestador }}</b><br><small>🏢 {{ reg.empresa }}</small></td>
-                        <td>{{ reg.destino_entrega }}</td>
-                        <td style="text-align:center;">
-                            {% if reg.hora_saida and reg.hora_saida != "" %}
-                                <span class="badge badge-closed">FINALIZADO ({{ reg.hora_saida }})</span>
-                            {% else %}
-                                <span class="badge badge-open">QSO ABERTO</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+<div class="stats-container">
+    <div class="stat-card"><span class="stat-number">{{ registros|length }}</span><span class="stat-label">Resultados</span></div>
+    <div class="stat-card" style="border-left-color: #d32f2f;">
+        <span class="stat-number">{% set abertos = registros|selectattr('hora_saida', 'equalto', '')|list|length %}{{ abertos }}</span>
+        <span class="stat-label">Abertos</span>
+    </div>
+    <div class="stat-card" style="border-left-color: #2e7d32;"><span class="stat-number">{{ registros|length - abertos }}</span><span class="stat-label">Finalizados</span></div>
+</div>
+
+<div class="table-wrapper">
+    <table>
+        <thead><tr><th>ID</th><th>Data/Hora</th><th>Colaborador</th><th>Prestador</th><th>Portão</th><th>Status</th></tr></thead>
+        <tbody>
+            {% for reg in registros %}
+            <tr class="row-clicavel" onclick='verDetalhes({{ reg|tojson }})'>
+                <td>#{{ reg.id }}</td>
+                <td><strong>{{ reg.data }}</strong><br><small>{{ reg.hora_entrada }}</small></td>
+                <td>{{ reg.criado_por }}</td>
+                <td><b>{{ reg.nome_prestador }}</b></td>
+                <td>{{ reg.portao }}</td>
+                <td>{% if reg.hora_saida %}<span class="badge badge-fechado">Finalizado</span>{% else %}<span class="badge badge-aberto">Aberto</span>{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div id="modalInfo" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>Ficha Completa</h3><span onclick="fecharModal()" style="cursor:pointer; font-size:24px;">&times;</span></div>
+        <div id="detalhesCorpo" class="modal-body"></div>
     </div>
 </div>
+
+<script>
+function verDetalhes(d) {
+    const mapa = {
+        'id': 'ID', 'data': 'Data', 'hora_entrada': 'Entrada', 'hora_saida': 'Saída',
+        'portao': 'Portão', 'nome_prestador': 'Prestador', 'empresa': 'Empresa', 'criado_por': 'Colaborador'
+    };
+    let html = '';
+    for (let [key, label] of Object.entries(mapa)) {
+        html += `<div class="info-box"><label>${label}</label><span>${d[key] || '---'}</span></div>`;
+    }
+    // Adiciona a imagem da assinatura se o caminho existir no banco
+    if (d.assinatura_path) {
+        const urlImg = `/static/assinaturas/${d.assinatura_path}`;
+        html += `
+            <div class="info-box" style="grid-column: span 2; text-align: center; margin-top: 15px; border-top: 2px solid #eee; padding-top: 15px;">
+                <label>Assinatura Digital</label>
+                <img src="${urlImg}" style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">
+                <br>
+                <a href="${urlImg}" download="Assinatura_${d.nome_prestador}.png" 
+                   style="display: inline-block; margin-top: 10px; padding: 8px 15px; background: #000; color: #FFD700; text-decoration: none; border-radius: 5px; font-size: 12px; font-weight: bold;">
+                   📥 BAIXAR IMAGEM DA ASSINATURA
+                </a>
+            </div>`;
+    }
+    document.getElementById('detalhesCorpo').innerHTML = html;
+    document.getElementById('modalInfo').style.display = 'block';
+}
+function fecharModal() { document.getElementById('modalInfo').style.display = 'none'; }
+</script>
 {% endblock %}
