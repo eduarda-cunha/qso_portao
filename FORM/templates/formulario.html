@@ -6,7 +6,7 @@
         <a href="/" style="color: #666; text-decoration: none;">⬅️ Voltar</a>
     </div>
 
-    <form action="{% if reg %}/formulario/{{ reg.id }}{% else %}/formulario{% endif %}" method="post" id="formRegistro" onsubmit="return validarAssinatura(event)">
+    <form action="{% if reg %}/formulario/{{ reg.id }}{% else %}/formulario{% endif %}" method="post" id="formRegistro">
     <style>
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         .full { grid-column: 1 / -1; }
@@ -27,7 +27,6 @@
         .btn-limpar { background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-top: 5px; font-size: 11px; }
         .btn-add { background: #007bff; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; width: 100%; }
         .btn-submit { margin-top:30px; width:100%; background: #000; color: #FFD700; padding: 18px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; text-transform: uppercase; }
-        /* Estilo para campos bloqueados */
         input[readonly], select[disabled] { background-color: #f5f5f5; color: #777; cursor: not-allowed; border-left: 1px solid #ccc !important; }
     </style>
 
@@ -95,9 +94,9 @@
             <div id="aviso_principal" class="alerta-menor" style="margin-bottom: 5px;">⚠️ ATENÇÃO: Colaborador menor de idade detectado!</div>
         </div>
 
-    <div class="sessao" style="margin-top: 5px; margin-bottom: 5px;">🏢 EMPRESA / VEÍCULO</div>
+        <div class="sessao" style="margin-top: 5px; margin-bottom: 5px;">🏢 EMPRESA / VEÍCULO</div>
 
-                <div class="full" style="display: flex; gap: 15px; width: 100%; margin-top: 0; margin-bottom: 15px; grid-column: 1 / -1;">
+        <div class="full" style="display: flex; gap: 15px; width: 100%; margin-top: 0; margin-bottom: 15px; grid-column: 1 / -1;">
             <div style="flex: 1;">
                 <label>CNH</label>
                 <input type="text" name="cnh_numero" value="{{ reg.cnh_numero if reg else '' }}" {{ 'readonly' if fechado }}>
@@ -111,7 +110,6 @@
                     {% endfor %}
                 </select>
             </div>
-
             <div style="flex: 1;">
                 <label>Vencimento</label>
                 <input type="date" name="cnh_vencimento" value="{{ reg.cnh_vencimento if reg else '' }}" {{ 'readonly' if fechado }}>
@@ -162,23 +160,84 @@
             <input type="text" name="colaborador_setor" value="{{ reg.colaborador_setor if reg else '' }}" {% if reg %}required{% endif %} {{ 'readonly' if fechado }}>
         </div>
 
-        <div class="sessao">📝 OBSERVAÇÕES E ASSINATURAS</div>
-        <div class="full">
-            <label>Observações: (Campo aberto para novas anotações)</label>
-        <textarea name="observacoes" id="obs_campo" placeholder="Observações adicionais ou autorização para menores...">{{ reg.observacoes if reg else '' }}</textarea>        </div>
+<div class="sessao">📝 OBSERVAÇÕES E ASSINATURAS</div>
+<div class="full">
+    <label>Observações: (Campo aberto para novas anotações)</label>
+    <textarea name="observacoes" id="obs_campo" placeholder="Observações adicionais...">{{ reg.observacoes if reg else '' }}</textarea>
+</div>
 
-        <div class="full">
-            <label>Assinatura Prestador de Serviço:</label>
-            <div class="area-assinatura active">
-                {% if not fechado %}
-                    <canvas id="canvas-principal"></canvas><br>
-                    <button type="button" class="btn-limpar" onclick="signaturePadPrincipal.clear()">🧹 Limpar Quadro</button>
-                {% else %}
-                    <div style="padding: 20px; border: 1px dashed #ccc; color: #666; background: #fafafa;">Assinatura Coletada e Registrada</div>
-                {% endif %}
-                <input type="hidden" name="assinatura_data" id="input_assinatura">
+<div class="full">
+    <label>Assinatura Prestador de Serviço:</label>
+    <div class="area-assinatura active" style="width: 100%;">
+        
+        {# 1ª Condição: Se já existe a imagem da assinatura no banco #}
+        {% if reg and reg.assinatura_data and reg.assinatura_data != "None" and reg.assinatura_data != "" %}
+            <div style="text-align: center; padding: 10px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px;">
+                <img src="{{ reg.assinatura_data }}" alt="Assinatura" style="max-width: 100%; max-height: 150px;">
+                <p style="color: #28a745; font-weight: bold; margin-top: 5px;">✅ ASSINATURA JÁ INSERIDA</p>
             </div>
-        </div>
+            <input type="hidden" name="assinatura_data" id="input_assinatura" value="{{ reg.assinatura_data }}">
+
+        {# 2ª Condição: Se o Python enviou fechado=True (centralizado e ajustado) #}
+        {% elif fechado %}
+            <div style="display: flex; justify-content: center; align-items: center; width: 100%; box-sizing: border-box; padding: 40px 15px; border: 2px dashed #000; background: #f9f9f9; text-align: center; border-radius: 8px; min-height: 180px;">
+                <span style="font-weight: bold; font-size: 1.2em; color: #333;">🔒 REGISTRO ENCERRADO</span>
+            </div>
+            <input type="hidden" name="assinatura_data" value="{{ reg.assinatura_data if reg else '' }}">
+
+        {# 3ª Condição: Se não houver nada, mostra o quadro para assinar #}
+        {% else %}
+            <canvas id="canvas-principal" style="width: 100%; border: 1px solid #ccc; border-radius: 8px; height: 180px; background: #fff;"></canvas>
+            <div style="text-align: center; margin-top: 10px;">
+                <button type="button" class="btn-limpar" onclick="signaturePadPrincipal.clear()">🖌️ Limpar Quadro</button>
+            </div>
+            <input type="hidden" name="assinatura_data" id="input_assinatura" value="">
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+    // Coloque este código dentro do seu eventListener de submit
+    form.addEventListener('submit', function(e) {
+        if (btnEnviar.hasAttribute('disabled')) { e.preventDefault(); return false; }
+        
+        const qsoFechado = {{ 'true' if fechado else 'false' }};
+        
+        if (qsoFechado) { 
+            travarBotao(); 
+            return true; 
+        }
+
+        // Verifica se o objeto SignaturePad existe antes de usar (evita erro de syntax)
+        if (typeof signaturePadPrincipal !== 'undefined' && signaturePadPrincipal !== null) {
+            if (!signaturePadPrincipal.isEmpty()) {
+                inputAssinatura.value = signaturePadPrincipal.toDataURL();
+            }
+        }
+
+        // Validação de assinatura ou justificativa
+        if (!inputAssinatura.value || inputAssinatura.value.trim() === "" || inputAssinatura.value === "None") {
+            const querJustificar = confirm("⚠️ Assinatura não detectada! Deseja informar uma JUSTIFICATIVA?");
+            
+            if (querJustificar) {
+                const just = prompt("Informe a JUSTIFICATIVA:");
+                if (just && just.trim().length > 3) {
+                    inputAssinatura.value = "JUSTIFICATIVA: " + just;
+                } else {
+                    alert("❌ Justificativa inválida.");
+                    e.preventDefault(); 
+                    return false;
+                }
+            } else {
+                e.preventDefault(); 
+                return false;
+            }
+        }
+
+        travarBotao();
+    });
+</script>
 
         <div class="sessao">👥 AJUDANTES ADICIONAIS</div>
         <div id="lista-colaboradores" class="full"></div>
@@ -192,8 +251,7 @@
 
     <div class="full">
         {% if fechado %}
-        <button type="submit" class="btn-enviar" style="background: #000; color: #FFD700; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%;">                💾 ATUALIZAR APENAS OBSERVAÇÕES
-            </button>
+            <button type="submit" class="btn-submit">💾 ATUALIZAR APENAS OBSERVAÇÕES</button>
         {% else %}
             <button type="submit" class="btn-submit">
                 {% if reg %}💾 SALVAR ALTERAÇÕES / DAR SAÍDA{% else %}✅ SALVAR REGISTRO DE ENTRADA{% endif %}
@@ -204,6 +262,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 <script>
+    const form = document.getElementById('formRegistro');
+    const btnEnviar = document.querySelector('.btn-submit');
+    const inputAssinatura = document.getElementById('input_assinatura');
     const canvasPrincipal = document.getElementById('canvas-principal');
     const signaturePadPrincipal = canvasPrincipal ? new SignaturePad(canvasPrincipal) : null;
     const canvasAcompanhante = document.getElementById('canvas-acompanhante');
@@ -212,19 +273,75 @@
     let contador = 0;
     let assinaturasExtras = {};
 
+    form.addEventListener('submit', function(e) {
+        if (btnEnviar.hasAttribute('disabled')) { e.preventDefault(); return false; }
+
+        const qsoFechado = {{ 'true' if fechado else 'false' }};
+        
+        // Se for segundo salve (apenas atualizar obs), libera direto
+        if (qsoFechado) { 
+            travarBotao(); 
+            return true; 
+        }
+
+        // 1. Tenta pegar a assinatura do quadro principal
+        if (signaturePadPrincipal && !signaturePadPrincipal.isEmpty()) {
+            inputAssinatura.value = signaturePadPrincipal.toDataURL();
+        }
+
+        // 2. Lógica de Validação ÚNICA (Sem repetição)
+        if (!inputAssinatura.value || inputAssinatura.value.trim() === "") {
+            const querJustificar = confirm("⚠️ Assinatura não detectada! Deseja informar uma JUSTIFICATIVA?");
+            
+            if (querJustificar) {
+                const just = prompt("Informe a JUSTIFICATIVA:");
+                if (just && just.trim().length > 3) {
+                    inputAssinatura.value = "JUSTIFICATIVA: " + just;
+                } else {
+                    alert("❌ Justificativa inválida ou muito curta.");
+                    e.preventDefault(); 
+                    return false;
+                }
+            } else {
+                // Se não quis justificar e não assinou, cancela o envio
+                e.preventDefault(); 
+                return false;
+            }
+        }
+
+        // 3. Processa Acompanhante e Ajudantes Extras
+        if (padAcompanhante && !padAcompanhante.isEmpty()) {
+            document.getElementById('input_assinatura_acompanhante').value = padAcompanhante.toDataURL();
+        }
+        
+        let listaFinal = [];
+        document.querySelectorAll('.colaborador-item').forEach(item => {
+            const id = item.id.replace('colab-container-', '');
+            listaFinal.push({
+                nome: item.querySelector('.extra-nome').value,
+                pulseira_ajudante: item.querySelector('.extra-pulseira').value,
+                nasc: item.querySelector('.extra-nasc').value,
+                assinatura: assinaturasExtras[id].isEmpty() ? "" : assinaturasExtras[id].toDataURL()
+            });
+        });
+        document.getElementById('colaboradores_json').value = JSON.stringify(listaFinal);
+
+        travarBotao();
+    });
+
+    function travarBotao() {
+        btnEnviar.setAttribute('disabled', 'true');
+        btnEnviar.style.opacity = '0.5';
+        btnEnviar.innerHTML = "💾 Salvando...";
+    }
+
     function verificarIdade(input, idAviso) {
         if(!input.value) return;
         const dataNasc = new Date(input.value);
         const hoje = new Date();
         let idade = hoje.getFullYear() - dataNasc.getFullYear();
         if (new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()) < new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate())) { idade--; }
-        const aviso = document.getElementById(idAviso);
-        if (idade < 18) {
-            aviso.style.display = 'block';
-            alert("⚠️ ALERTA: Menor de idade detectado. Descreva a autorização nas observações.");
-        } else {
-            aviso.style.display = 'none';
-        }
+        document.getElementById(idAviso).style.display = (idade < 18) ? 'block' : 'none';
     }
 
     function abrirAssinatura(id) {
@@ -260,73 +377,14 @@
         assinaturasExtras[contador] = new SignaturePad(canvas);
     }
 
-    function removerColaborador(id) {
-        document.getElementById(`colab-container-${id}`).remove();
-        delete assinaturasExtras[id];
-    }
+    function removerColaborador(id) { document.getElementById(`colab-container-${id}`).remove(); delete assinaturasExtras[id]; }
 
-    function validarAssinatura(event) {
-        const inputAssinatura = document.getElementById('input_assinatura');
-        const campoHoraSaida = document.getElementById('hora_saida');
-        
-        {% if fechado %}
-            return true;
-        {% endif %}
-
-        if (signaturePadPrincipal && !signaturePadPrincipal.isEmpty()) {
-            inputAssinatura.value = signaturePadPrincipal.toDataURL();
-        }
-
-        const avisos = document.querySelectorAll('.alerta-menor');
-        let menorDetectado = false;
-        avisos.forEach(aviso => { if(aviso.style.display === 'block') menorDetectado = true; });
-        if (menorDetectado && document.getElementById('obs_campo').value.trim().length < 5) {
-            alert("❌ ERRO: Para menores de idade, descreva a autorização nas OBSERVAÇÕES.");
-            return false;
-        }
-
-        if (campoHoraSaida && campoHoraSaida.value.trim() !== "") {
-            if (!inputAssinatura.value || inputAssinatura.value.trim() === "") {
-                const confirmar = confirm("Atenção: Registro sem assinatura do prestador!\n\nDeseja continuar mesmo assim?");
-                if (confirmar) {
-                    const justificativa = prompt("Por favor, informe a JUSTIFICATIVA para a falta de assinatura:");
-                    if (!justificativa || justificativa.trim() === "") {
-                        alert("Erro: Para continuar sem assinatura, a justificativa é obrigatória.");
-                        return false;
-                    }
-                    inputAssinatura.value = "JUSTIFICATIVA: " + justificativa;
-                } else {
-                    return false;
-                }
-            }
-        }
-
-        if (padAcompanhante && !padAcompanhante.isEmpty()) {
-            document.getElementById('input_assinatura_acompanhante').value = padAcompanhante.toDataURL();
-        }
-
-        let listaFinal = [];
-        document.querySelectorAll('.colaborador-item').forEach(item => {
-            const id = item.id.replace('colab-container-', '');
-            listaFinal.push({
-                nome: item.querySelector('.extra-nome').value,
-                pulseira_ajudante: item.querySelector('.extra-pulseira').value,
-                nasc: item.querySelector('.extra-nasc').value,
-                assinatura: assinaturasExtras[id].isEmpty() ? "" : assinaturasExtras[id].toDataURL()
-            });
-        });
-        document.getElementById('colaboradores_json').value = JSON.stringify(listaFinal);
-
-        return true;
-    }
-
-    window.addEventListener("load", () => {
-        if (canvasPrincipal) ajustarCanvas(canvasPrincipal);
-        if (canvasAcompanhante) ajustarCanvas(canvasAcompanhante);
+    window.addEventListener("load", () => { 
+        if (canvasPrincipal) ajustarCanvas(canvasPrincipal); 
+        if (canvasAcompanhante) ajustarCanvas(canvasAcompanhante); 
     });
 
     document.getElementById('campo_portao').addEventListener('input', function() {
-        if(document.getElementById('hora_saida').hasAttribute('readonly')) return;
         const portao = this.value.trim();
         const mapaSetores = {"28":"Setor 1","23":"Setor 1","24":"Setor 1","25":"Setor 1","26":"Setor 1","03":"Setor 2","3":"Setor 2","08":"Setor 2","8":"Setor 2","09":"Setor 6","9":"Setor 6","10":"Setor 6","11":"Setor 5","12":"Setor 4","18":"Setor 3","21":"Setor 3"};
         document.getElementById('campo_setor').value = mapaSetores[portao] || ""; 

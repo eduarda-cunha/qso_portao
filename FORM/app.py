@@ -175,7 +175,20 @@ def formulario(id=None):
         db.close()
         return redirect(url_for('index'))
 
-    return render_template('formulario.html', reg=registro, hoje_iso=datetime.now().strftime('%Y-%m-%d'))
+    is_fechado = False
+    
+    if registro:
+        if isinstance(registro, dict):
+            is_fechado = bool(registro.get('assinatura_data'))
+        else:
+            is_fechado = bool(getattr(registro, 'assinatura_data', None))
+
+    return render_template(
+        'formulario.html',
+        reg=registro,
+        fechado=is_fechado,
+        hoje_iso=datetime.now().strftime('%Y-%m-%d')
+    )
 
 @app.route('/gestor')
 @auth.login_required
@@ -236,7 +249,9 @@ def exportar():
         fmt_fechado = workbook.add_format({'bg_color': '#C6EFCE', 'font_color': '#006100'})
         
         for i, col in enumerate(df.columns):
-            max_len = max(df[col].astype(str).map(len).max(), len(col)) + 2
+            max_conteudo = df[col].apply(lambda x: len(str(x)) if x is not None and str(x) != 'nan' else 0).max()
+            max_titulo = len(str(col))
+            max_len = max(max_conteudo, max_titulo) + 2
             worksheet.set_column(i, i, max_len)
 
         if not df.empty:
