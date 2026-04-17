@@ -2,7 +2,7 @@
 {% block content %}
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2>{% if reg %}📝 Editar Registro{% else %}Novo Registro{% endif %}</h2>
+        <h2>{% if reg %}📝 Finalizar Saída / Editar{% else %}Novo Registro - QSO ENTRADA{% endif %}</h2>
         <a href="/" style="color: #666; text-decoration: none;">⬅️ Voltar</a>
     </div>
 
@@ -12,7 +12,12 @@
             .full { grid-column: 1 / -1; }
             label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #444; }
             input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 13px; }
-            input[required], select[required] { border-left: 5px solid #b22222; }
+            
+            .pulseira-input { color: red !important; font-weight: bold; border: 1px solid red !important; }
+            .label-vermelha { color: red !important; }
+
+            input[required], select[required], textarea[required] { border-left: 5px solid #b22222; }
+            
             .campo-saida { background-color: #fffde7; border: 1px solid #ffd600; border-left: 5px solid #ffd600; color: #827717; font-weight: bold; }
             .sessao { background: #eee; color: #333; padding: 8px; grid-column: 1 / -1; font-weight: bold; font-size: 13px; margin-top: 15px; border-radius: 4px; display: flex; align-items: center; gap: 8px; }
             .alerta-menor { display: none; background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; padding: 10px; border-radius: 6px; margin-top: 5px; font-size: 12px; font-weight: bold; }
@@ -28,76 +33,167 @@
         </style>
 
         <div class="grid">
-            <div class="sessao">📍 LOCALIZAÇÃO E HORÁRIO</div>
-            <div>
-                <label>Data da Visita *</label>
-                <input type="date" name="data" value="{{ reg.data_iso if reg else hoje_iso }}" required>
-            </div>
-            <div><label>Horário Entrada</label><input type="time" name="hora_entrada" value="{{ reg.hora_entrada if reg else '' }}"></div>
-            <div><label style="color: red;">Horário Saída</label><input type="time" name="hora_saida" class="campo-saida" value="{{ reg.hora_saida if reg else '' }}"></div>
-            <div><label>Portão *</label><input type="text" name="portao" value="{{ reg.portao if reg else '' }}" required></div>
+<div class="sessao">📍 DADOS INICIAIS (HORARIO / DATA)</div>
 
-            <div class="sessao">👤 PRESTADOR (CONDUTOR)</div>
-            <div class="full"><label>Nome Completo *</label><input type="text" name="nome_prestador" value="{{ reg.nome_prestador if reg else '' }}" required></div>
+<div>
+        <label>Data *</label>
+        <input type="date" name="data" value="{{ reg.data if reg else hoje_iso }}" required>
+    </div>
+
+    <div>
+        <label class="label-vermelha">Número Pulseira *</label>
+        <input type="number" name="numero_pulseira" class="pulseira-input" value="{{ reg.numero_pulseira if reg else '' }}">
+    </div>
+
+    <div>
+        <label>Entrada *</label>
+        <input type="time" name="hora_entrada" value="{{ reg.hora_entrada if reg else '' }}" required>
+    </div>
+
+    <div>
+        <label style="color: #827717;">Saída</label>
+        <input type="time" name="hora_saida" class="campo-saida" value="{{ reg.hora_saida if reg else '' }}">
+    </div>
+
+<div class="full" style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
+    <div style="display: grid; grid-template-columns: 200px 200px; gap: 15px; width: fit-content;">
+        
+        <div>
+            <label>Portão {% if reg %}*{% endif %}</label>
+            <input type="text" 
+                   name="portao" 
+                   id="campo_portao" 
+                   value="{{ reg.portao if reg else '' }}" 
+                   {% if reg %}required{% endif %} 
+                   placeholder="">
+        </div>
+
+        <div>
+            <label>Setor</label>
+            <input type="text" 
+                   name="setor" 
+                   id="campo_setor" 
+                   value="{{ reg.setor if reg else '' }}" 
+                   readonly 
+                   style="background-color: #f5f5f5; color: #666; cursor: not-allowed;"
+                   placeholder="Automático">
+        </div>
+        
+    </div>
+</div>
+
+
+            <div class="sessao">👤 IDENTIFICAÇÃO DO PRESTADOR</div>
             
+            <div class="full">
+                <label>Nome prestador de serviço: *</label>
+                <input type="text" name="nome_prestador" value="{{ reg.nome_prestador if reg else '' }}" required>
+            </div>
+
             <div>
-                <label>Data Nascimento *</label>
-                <input type="date" name="data_nascimento" id="nasc_principal" onchange="verificarIdade(this, 'aviso_principal')" required>
+                <label>RG</label>
+                <input type="text" name="rg" value="{{ reg.rg if reg else '' }}">
+            </div>
+
+            <div>
+                <label>CPF {% if reg %}*{% endif %}</label>
+                <input type="text" name="cpf" value="{{ reg.cpf if reg else '' }}" {% if reg %}required{% endif %}>
+            </div>
+
+            <div class="full">
+                <label>Data de Nascimento: {% if reg %}*{% endif %}</label>
+                <input type="date" name="data_nascimento" id="nasc_principal" value="{{ reg.data_nascimento if reg else '' }}" onchange="verificarIdade(this, 'aviso_principal')" {% if reg %}required{% endif %}>
                 <div id="aviso_principal" class="alerta-menor">⚠️ ATENÇÃO: Colaborador menor de idade detectado!</div>
             </div>
 
-            <div><label>Número CNH *</label><input type="text" name="cnh_numero" value="{{ reg.cnh_numero if reg else '' }}" required></div>
-            <div><label>Vencimento CNH *</label><input type="date" name="cnh_vencimento" value="{{ reg.cnh_vencimento if reg else '' }}" required></div>
             <div>
-                <label>Categoria CNH *</label>
-                <select name="cnh_categoria" required>
+                <label>CNH</label>
+                <input type="text" name="cnh_numero" value="{{ reg.cnh_numero if reg else '' }}">
+            </div>
+
+            <div>
+                <label>Categoria</label>
+                <select name="cnh_categoria">
                     <option value="">Selecione</option>
                     {% for cat in ['A', 'B', 'C', 'D', 'E', 'AB', 'AC', 'AD', 'AE'] %}
                     <option value="{{ cat }}" {% if reg and reg.cnh_categoria == cat %}selected{% endif %}>{{ cat }}</option>
                     {% endfor %}
                 </select>
             </div>
-            
-            <div class="sessao">🏢 EMPRESA / VEÍCULO</div>
-            <div class="full"><label>Nome da Empresa *</label><input type="text" name="empresa" value="{{ reg.empresa if reg else '' }}" required></div>
-            <div><label>Veículo</label><input type="text" name="veiculo" value="{{ reg.veiculo if reg else '' }}"></div>
-            <div><label>Placa</label><input type="text" name="placa" value="{{ reg.placa if reg else '' }}"></div>
 
-            <div class="sessao">🛠️ DETALHES DO SERVIÇO</div>
-            <div class="full"><label>Destino / Contratante *</label><input type="text" name="destino_entrega" value="{{ reg.destino_entrega if reg else '' }}" required></div>
+            <div>
+                <label>Vencimento</label>
+                <input type="date" name="cnh_vencimento" value="{{ reg.cnh_vencimento if reg else '' }}">
+            </div>
+
+            <div class="sessao">🏢 EMPRESA / VEÍCULO</div>
             
             <div class="full">
-                <label>Colaborador que acompanhou 
-                    <button type="button" class="btn-caneta" onclick="abrirAssinatura('area-acompanhante')">📝 Assinar</button>
+                <label>Empresa: *</label>
+                <input type="text" name="empresa" value="{{ reg.empresa if reg else '' }}" required>
+            </div>
+
+            <div>
+                <label>Veículo</label>
+                <input type="text" name="veiculo" value="{{ reg.veiculo if reg else '' }}">
+            </div>
+
+            <div>
+                <label>Placa</label>
+                <input type="text" name="placa" value="{{ reg.placa if reg else '' }}">
+            </div>
+
+            <div class="sessao">🛠️ DETALHES DO TRABALHO</div>
+            
+            <div class="full">
+                <label>Serviço a ser realizado: *</label>
+                <input type="text" name="servico" value="{{ reg.servico if reg else '' }}" required>
+            </div>
+
+            <div class="full">
+                <label>Destino / Local de Entrega *</label>
+                <input type="text" name="destino_entrega" value="{{ reg.destino_entrega if reg else '' }}" required>
+            </div>
+
+            <div class="full">
+                <label>Colaborador que acompanhou: 
+                    <button type="button" class="btn-caneta" onclick="abrirAssinatura('area-acompanhante')">📝 Abrir Quadro</button>
                 </label>
                 <input type="text" name="colaborador_acompanhou" value="{{ reg.colaborador_acompanhou if reg else '' }}">
                 <div id="area-acompanhante" class="area-assinatura">
                     <canvas id="canvas-acompanhante"></canvas><br>
-                    <button type="button" class="btn-limpar" onclick="padAcompanhante.clear()">🧹 Limpar Quadro</button>
+                    <button type="button" class="btn-limpar" onclick="padAcompanhante.clear()">🧹 Limpar</button>
                     <input type="hidden" name="assinatura_acompanhante" id="input_assinatura_acompanhante">
                 </div>
             </div>
 
-            <div class="sessao">📝 OBSERVAÇÕES</div>
             <div class="full">
-                <textarea name="observacoes" id="obs_campo" placeholder="Caso seja menor de idade, descreva aqui quem autorizou...">{{ reg.observacoes if reg else '' }}</textarea>
+                <label>Colaborador do Setor: {% if reg %}*{% endif %}</label>
+                <input type="text" name="colaborador_setor" value="{{ reg.colaborador_setor if reg else '' }}" {% if reg %}required{% endif %}>
+            </div>
+
+            <div class="sessao">📝 OBSERVAÇÕES E ASSINATURAS</div>
+            <div class="full">
+                <textarea name="observacoes" id="obs_campo" placeholder="Observações adicionais ou autorização para menores...">{{ reg.observacoes if reg else '' }}</textarea>
             </div>
 
             {% if not reg %}
-            <div class="sessao">🖋️ ASSINATURA PRESTADOR DE SERVIÇO</div>
-            <div class="full area-assinatura active">
-                <canvas id="canvas-principal"></canvas><br>
-                <button type="button" class="btn-limpar" onclick="signaturePadPrincipal.clear()">🧹 Limpar Quadro</button>
-                <input type="hidden" name="assinatura_data" id="input_assinatura">
+            <div class="full">
+                <label>Assinatura Prestador de Serviço:</label>
+                <div class="area-assinatura active">
+                    <canvas id="canvas-principal"></canvas><br>
+                    <button type="button" class="btn-limpar" onclick="signaturePadPrincipal.clear()">🧹 Limpar Quadro</button>
+                    <input type="hidden" name="assinatura_data" id="input_assinatura">
+                </div>
             </div>
             {% endif %}
 
-            <div class="sessao">👥 INCLUIR MAIS PRESTADORES DE SERVIÇO (AJUDANTES)</div>
+            <div class="sessao">👥 AJUDANTES ADICIONAIS</div>
             <div id="lista-colaboradores" class="full"></div>
             <div class="full">
                 <button type="button" class="btn-add" onclick="adicionarColaborador()"> + Adicionar Outro Colaborador</button>
             </div>
-            <input type="hidden" name="colaboradores_adicionais" id="colaboradores_json">
+            <input type="hidden" name="colaboradores_json" id="colaboradores_json">
         </div>
         
         <button type="submit" class="btn-submit">
@@ -116,8 +212,8 @@
     let contador = 0;
     let assinaturasExtras = {};
 
-    // FUNÇÃO DE VERIFICAÇÃO DE IDADE
     function verificarIdade(input, idAviso) {
+        if(!input.value) return;
         const dataNasc = new Date(input.value);
         const hoje = new Date();
         let idade = hoje.getFullYear() - dataNasc.getFullYear();
@@ -127,7 +223,7 @@
         const aviso = document.getElementById(idAviso);
         if (idade < 18) {
             aviso.style.display = 'block';
-            alert("⚠️ ALERTA: Colaborador menor de idade ("+idade+" anos). É obrigatório descrever a autorização nas observações.");
+            alert("⚠️ ALERTA: Colaborador menor de idade ("+idade+" anos). Descreva a autorização nas observações.");
         } else {
             aviso.style.display = 'none';
         }
@@ -184,14 +280,13 @@
     }
 
     document.getElementById('formRegistro').onsubmit = function(e) {
-        // BLOQUEIO DE SEGURANÇA: Se houver aviso de menor e observação vazia
         const avisos = document.querySelectorAll('.alerta-menor');
         let menorDetectado = false;
         avisos.forEach(aviso => { if(aviso.style.display === 'block') menorDetectado = true; });
 
         const obs = document.getElementById('obs_campo').value;
         if (menorDetectado && obs.trim().length < 5) {
-            alert("❌ ERRO: Para menores de idade, você deve preencher o campo OBSERVAÇÕES com os detalhes da autorização.");
+            alert("❌ ERRO: Para menores de idade, descreva a autorização nas OBSERVAÇÕES.");
             e.preventDefault();
             return false;
         }
@@ -218,6 +313,26 @@
     window.addEventListener("load", () => {
         if (canvasPrincipal) ajustarCanvas(canvasPrincipal);
         ajustarCanvas(canvasAcompanhante);
+
     });
+
+    document.getElementById('campo_portao').addEventListener('input', function() {
+        const portao = this.value.trim().toLowerCase();
+        const campoSetor = document.getElementById('campo_setor');
+
+        const mapaSetores = {
+            "28": "Setor 1", "23": "Setor 1",
+            "24": "Setor 1", "25": "Setor 1", "26": "Setor 1",
+            "03": "Setor 2", "3": "Setor 2",
+            "08": "Setor 2", "8": "Setor 2",
+            "09": "Setor 6", "9": "Setor 6",
+            "10": "Setor 6", "11": "Setor 5",
+            "12": "Setor 4", "18": "Setor 3", "21": "Setor 3"
+        };
+
+        campoSetor.value = mapaSetores[portao] || ""; 
+    });
+
 </script>
+
 {% endblock %}
