@@ -39,7 +39,7 @@
     <h2>Painel Administrativo</h2>
     <a href="{{ url_for('exportar', **filtros) }}" 
        style="background:var(--amarelo); color:#000; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; font-size: 14px;">
-       📥 BAIXAR EXCEL (GOOGLE SHEETS)
+       📥 BAIXAR EXCEL
     </a>
 </div>
 
@@ -105,8 +105,7 @@
                 <td><strong>{{ reg.data }}</strong><br><small>{{ reg.hora_entrada }}</small></td>
                 <td>{{ reg.criado_por }}</td>
                 <td><b>{{ reg.nome_prestador }}</b></td>
-                <td>{{ reg.empresa }}</td> <td>{{ reg.portao }}</td>
-                <td>
+                <td>{{ reg.empresa }}</td> <td>{{ reg.portao }}</td>    <td>
                     {% if reg.hora_saida %}
                         <span class="badge badge-fechado">Finalizado</span>
                     {% else %}
@@ -173,7 +172,6 @@ function fecharModal() {
     document.getElementById('modalInfo').style.display = 'none'; 
 }
 
-// Fechar modal ao clicar fora dele
 window.onclick = function(event) {
     let modal = document.getElementById('modalInfo');
     if (event.target == modal) {

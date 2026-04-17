@@ -33,12 +33,26 @@ def verify_password(username, password):
         return username
 
 def salvar_assinatura(b64_data):
-    if b64_data and "," in b64_data:
-        nome_arquivo = f"sign_{datetime.now().strftime('%Y%m%d%H%M%S%f')}.png"
-        header, encoded = b64_data.split(",", 1)
-        with open(os.path.join(UPLOAD_FOLDER, nome_arquivo), "wb") as f:
-            f.write(base64.b64decode(encoded))
-        return nome_arquivo
+    if not b64_data:
+        return None
+    
+    if b64_data.startswith("JUSTIFICATIVA:"):
+        return b64_data 
+    
+    if "," in b64_data:
+        try:
+            nome_arquivo = f"sign_{datetime.now().strftime('%Y%m%d%H%M%S%f')}.png"
+            header, encoded = b64_data.split(",", 1)
+            
+            caminho_completo = os.path.join(app.root_path, 'static', 'assinaturas', nome_arquivo)
+            
+            with open(caminho_completo, "wb") as f:
+                f.write(base64.b64decode(encoded))
+            return nome_arquivo
+        except Exception as e:
+            print(f"Erro ao salvar imagem: {e}")
+            return None
+            
     return None
 
 @app.route('/login', methods=['GET', 'POST'])
