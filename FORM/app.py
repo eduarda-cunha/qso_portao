@@ -60,10 +60,20 @@ def logout():
 def index():
     if 'usuario' not in session: 
         return redirect(url_for('login'))
+    
     db = get_db()
-    rows = db.execute('SELECT * FROM registros WHERE criado_por = ? ORDER BY id DESC', (session['usuario'],)).fetchall()
+    # comando que não limpa o quadro de qso diarios, para apenas o gestor ver todos 
+    hoje_iso = datetime.now().strftime('%Y-%m-%d')
+
+    query = '''
+        SELECT * FROM registros 
+        WHERE criado_por = ? AND data = ? 
+        ORDER BY id DESC
+    '''
+    rows = db.execute(query, (session['usuario'], hoje_iso)).fetchall()
     registros = [dict(row) for row in rows] 
     db.close()
+    
     return render_template('index.html', registros=registros, hoje=datetime.now().strftime('%d/%m/%Y'))
 
 @app.route('/formulario', methods=['GET', 'POST'])
@@ -78,64 +88,68 @@ def formulario(id=None):
     if request.method == 'POST':
         dados = {
             'data': request.form.get('data'),
-            'h_entrada': request.form.get('hora_entrada'),
-            'nome': request.form.get('nome_prestador'),
+            'hora_entrada': request.form.get('hora_entrada'),
+            'nome_prestador': request.form.get('nome_prestador'),
             'servico': request.form.get('servico'),
-            'destino': request.form.get('destino_entrega'),
+            'destino_entrega': request.form.get('destino_entrega'),
             'empresa': request.form.get('empresa'),
+            'pulseira': request.form.get('pulseira'), 
             'cpf': request.form.get('cpf'),
             'rg': request.form.get('rg'),
-            'nascimento': request.form.get('data_nascimento'),
-            'colab_setor': request.form.get('colaborador_setor'),
+            'data_nascimento': request.form.get('data_nascimento'),
+            'colaborador_setor': request.form.get('colaborador_setor'),
             'portao': request.form.get('portao'),
             'setor': request.form.get('setor'),
             'veiculo': request.form.get('veiculo'),
             'placa': request.form.get('placa'),
-            'h_saida': request.form.get('hora_saida'),
-            'cnh_n': request.form.get('cnh_numero'),
-            'cnh_v': request.form.get('cnh_vencimento'),
-            'cnh_c': request.form.get('cnh_categoria'),
-            'obs': request.form.get('observacoes'),
-            'ajudantes': request.form.get('colaboradores_json'),
+            'hora_saida': request.form.get('hora_saida'),
+            'cnh_numero': request.form.get('cnh_numero'),
+            'cnh_vencimento': request.form.get('cnh_vencimento'),
+            'cnh_categoria': request.form.get('cnh_categoria'),
+            'observacoes': request.form.get('observacoes'),
+            'colaboradores_json': request.form.get('colaboradores_json'),
+            'pulseira_acompanhante': request.form.get('pulseira_acompanhante'), 
             'ass_pre': request.form.get('assinatura_data'),
             'ass_aco': request.form.get('assinatura_acompanhante')
         }
 
         if id:
-            hora_final = dados['h_saida'] if dados['h_saida'] else datetime.now().strftime('%H:%M')
+            h_saida = dados['hora_saida'] if dados['hora_saida'] else datetime.now().strftime('%H:%M')
             db.execute('''UPDATE registros SET 
-                          hora_saida = ?, cpf = ?, data_nascimento = ?, portao = ?, 
-                          setor = ?, colaborador_setor = ?, servico = ?, destino_entrega = ?,
+                          hora_saida = ?, empresa = ?, pulseira = ?, cpf = ?, data_nascimento = ?, 
+                          portao = ?, setor = ?, colaborador_setor = ?, servico = ?, destino_entrega = ?,
                           cnh_numero = ?, cnh_vencimento = ?, cnh_categoria = ?, 
-                          observacoes = ?, colaborador_acompanhou = ? 
+                          observacoes = ?, colaboradores_json = ?, pulseira_acompanhante = ? 
                           WHERE id = ?''', 
-                       (hora_final, dados['cpf'], dados['nascimento'], dados['portao'], 
-                        dados['setor'], dados['colab_setor'], dados['servico'], dados['destino'],
-                        dados['cnh_n'], dados['cnh_v'], dados['cnh_c'], dados['obs'], 
-                        dados['ajudantes'], id))
+                       (h_saida, dados['empresa'], dados['pulseira'], dados['cpf'], dados['data_nascimento'], 
+                        dados['portao'], dados['setor'], dados['colaborador_setor'], dados['servico'], dados['destino_entrega'],
+                        dados['cnh_numero'], dados['cnh_vencimento'], dados['cnh_categoria'], 
+                        dados['observacoes'], dados['colaboradores_json'], dados['pulseira_acompanhante'], id))
         else:
             campos = {
                 'uuid': str(uuid.uuid4()), 
                 'criado_por': session.get('usuario'),
-                'data': dados.get('data'), 
-                'hora_entrada': dados.get('h_entrada'),
-                'portao': dados.get('portao'), 
-                'setor': dados.get('setor'),
-                'nome_prestador': dados.get('nome'), 
-                'rg': dados.get('rg'),
-                'cpf': dados.get('cpf'), 
-                'data_nascimento': dados.get('nascimento'),
-                'cnh': dados.get('cnh_n'), 
-                'categoria': dados.get('cnh_c'),
-                'vencimento_cnh': dados.get('cnh_v'), 
-                'empresa': dados.get('empresa'),
-                'veiculo': dados.get('veiculo'), 
-                'placa': dados.get('placa'),
-                'servico': dados.get('servico'), 
-                'destino_entrega': dados.get('destino'),
-                'colaborador_acompanhou': dados.get('ajudantes'), 
-                'colaborador_setor': dados.get('colab_setor'), 
-                'observacoes': dados.get('obs'),
+                'data': dados['data'], 
+                'hora_entrada': dados['hora_entrada'],
+                'portao': dados['portao'], 
+                'setor': dados['setor'],
+                'nome_prestador': dados['nome_prestador'], 
+                'rg': dados['rg'],
+                'cpf': dados['cpf'], 
+                'data_nascimento': dados['data_nascimento'],
+                'cnh_numero': dados['cnh_numero'],
+                'cnh_categoria': dados['cnh_categoria'],
+                'cnh_vencimento': dados['cnh_vencimento'], 
+                'empresa': dados['empresa'],
+                'pulseira': dados['pulseira'],
+                'veiculo': dados['veiculo'], 
+                'placa': dados['placa'],
+                'servico': dados['servico'], 
+                'destino_entrega': dados['destino_entrega'],
+                'colaboradores_json': dados['colaboradores_json'], 
+                'pulseira_acompanhante': dados['pulseira_acompanhante'], 
+                'colaborador_setor': dados['colaborador_setor'], 
+                'observacoes': dados['observacoes'],
                 'assinatura_path': salvar_assinatura(dados['ass_pre']),
                 'assinatura_acompanhante_path': salvar_assinatura(dados['ass_aco'])
             }
@@ -204,7 +218,6 @@ def exportar():
         workbook  = writer.book
         worksheet = writer.sheets['Relatorio']
 
-        # Formatos
         fmt_aberto = workbook.add_format({'bg_color': '#FFC7CE', 'font_color': '#9C0006'})
         fmt_fechado = workbook.add_format({'bg_color': '#C6EFCE', 'font_color': '#006100'})
         

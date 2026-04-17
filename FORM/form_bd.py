@@ -10,6 +10,7 @@ def init_db():
             uuid TEXT UNIQUE,
             criado_por TEXT,
             data TEXT, 
+            pulseira TEXT,
             hora_entrada TEXT, 
             hora_saida TEXT, 
             portao TEXT, 
@@ -18,31 +19,35 @@ def init_db():
             rg TEXT, 
             cpf TEXT, 
             data_nascimento TEXT,
-            cnh TEXT, 
-            categoria TEXT, 
-            vencimento_cnh TEXT, 
+            cnh_numero TEXT,
+            cnh_categoria TEXT, 
+            cnh_vencimento TEXT,
             empresa TEXT,
             veiculo TEXT, 
             placa TEXT, 
             servico TEXT, 
             destino_entrega TEXT NOT NULL,
             colaborador_acompanhou TEXT, 
+            pulseira_acompanhante TEXT, 
             colaborador_setor TEXT,
-            observacoes TEXT
+            observacoes TEXT,
+            colaboradores_json TEXT,
+            assinatura_path TEXT,
+            assinatura_acompanhante_path TEXT
         )
     ''')
     
-    colunas_extras = [
-        'portao', 'setor', 'cnh', 'categoria', 
-        'vencimento_cnh', 'colaborador_acompanhou', 
-        'colaborador_setor', 'observacoes'
+    colunas_para_verificar = [
+        'pulseira', 'portao', 'setor', 'cnh_numero', 'cnh_categoria', 
+        'cnh_vencimento', 'colaborador_acompanhou', 'pulseira_acompanhante',
+        'colaborador_setor', 'observacoes', 'empresa', 'assinatura_path', 
+        'assinatura_acompanhante_path', 'colaboradores_json'
     ]
     
-    for coluna in colunas_extras:
+    for coluna in colunas_para_verificar:
         try:
             cursor.execute(f'ALTER TABLE registros ADD COLUMN {coluna} TEXT')
         except sqlite3.OperationalError:
-            # Se a coluna já existir, ele apenas ignora e pula para a próxima
             pass
     
     conn.commit()

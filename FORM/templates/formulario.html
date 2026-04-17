@@ -33,55 +33,40 @@
         </style>
 
         <div class="grid">
-<div class="sessao">📍 DADOS INICIAIS (HORARIO / DATA)</div>
+            <div class="sessao">📍 DADOS INICIAIS (HORARIO / DATA)</div>
 
-<div>
-        <label>Data *</label>
-        <input type="date" name="data" value="{{ reg.data if reg else hoje_iso }}" required>
-    </div>
+            <div>
+                <label>Data *</label>
+                <input type="date" name="data" value="{{ reg.data if reg else hoje_iso }}" required>
+            </div>
 
-    <div>
-        <label class="label-vermelha">Número Pulseira *</label>
-        <input type="number" name="numero_pulseira" class="pulseira-input" value="{{ reg.numero_pulseira if reg else '' }}">
-    </div>
+            <div>
+                <label class="label-vermelha">Número Pulseira *</label>
+                <input type="number" name="pulseira" class="pulseira-input" value="{{ reg.pulseira if reg else '' }}">
+            </div>
 
-    <div>
-        <label>Entrada *</label>
-        <input type="time" name="hora_entrada" value="{{ reg.hora_entrada if reg else '' }}" required>
-    </div>
+            <div>
+                <label>Entrada *</label>
+                <input type="time" name="hora_entrada" value="{{ reg.hora_entrada if reg else '' }}" required>
+            </div>
 
-    <div>
-        <label style="color: #827717;">Saída</label>
-        <input type="time" name="hora_saida" class="campo-saida" value="{{ reg.hora_saida if reg else '' }}">
-    </div>
+            <div>
+                <label style="color: #827717;">Saída</label>
+                <input type="time" name="hora_saida" class="campo-saida" value="{{ reg.hora_saida if reg else '' }}">
+            </div>
 
-<div class="full" style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
-    <div style="display: grid; grid-template-columns: 200px 200px; gap: 15px; width: fit-content;">
-        
-        <div>
-            <label>Portão {% if reg %}*{% endif %}</label>
-            <input type="text" 
-                   name="portao" 
-                   id="campo_portao" 
-                   value="{{ reg.portao if reg else '' }}" 
-                   {% if reg %}required{% endif %} 
-                   placeholder="">
-        </div>
-
-        <div>
-            <label>Setor</label>
-            <input type="text" 
-                   name="setor" 
-                   id="campo_setor" 
-                   value="{{ reg.setor if reg else '' }}" 
-                   readonly 
-                   style="background-color: #f5f5f5; color: #666; cursor: not-allowed;"
-                   placeholder="Automático">
-        </div>
-        
-    </div>
-</div>
-
+            <div class="full" style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
+                <div style="display: grid; grid-template-columns: 200px 200px; gap: 15px; width: fit-content;">
+                    <div>
+                        <label>Portão {% if reg %}*{% endif %}</label>
+                        <input type="text" name="portao" id="campo_portao" value="{{ reg.portao if reg else '' }}" {% if reg %}required{% endif %}>
+                    </div>
+                    <div>
+                        <label>Setor</label>
+                        <input type="text" name="setor" id="campo_setor" value="{{ reg.setor if reg else '' }}" readonly style="background-color: #f5f5f5; color: #666; cursor: not-allowed;" placeholder="Automático">
+                    </div>
+                </div>
+            </div>
 
             <div class="sessao">👤 IDENTIFICAÇÃO DO PRESTADOR</div>
             
@@ -254,6 +239,12 @@
             <button type="button" class="btn-remover" onclick="removerColaborador(${contador})">✖</button>
             <div class="grid">
                 <div class="full"><label>Nome Completo</label><input type="text" class="extra-nome" required></div>
+                
+                <div>
+                    <label class="label-vermelha">Pulseira do Ajudante</label>
+                    <input type="number" class="extra-pulseira pulseira-input" placeholder="Nº Pulseira">
+                </div>
+
                 <div>
                     <label>Data Nascimento</label>
                     <input type="date" class="extra-nasc" onchange="verificarIdade(this, 'aviso_extra_${contador}')" required>
@@ -303,6 +294,7 @@
             const id = item.id.replace('colab-container-', '');
             listaFinal.push({
                 nome: item.querySelector('.extra-nome').value,
+                pulseira_ajudante: item.querySelector('.extra-pulseira').value,
                 nasc: item.querySelector('.extra-nasc').value,
                 assinatura: assinaturasExtras[id].isEmpty() ? "" : assinaturasExtras[id].toDataURL()
             });
@@ -313,26 +305,18 @@
     window.addEventListener("load", () => {
         if (canvasPrincipal) ajustarCanvas(canvasPrincipal);
         ajustarCanvas(canvasAcompanhante);
-
     });
 
     document.getElementById('campo_portao').addEventListener('input', function() {
         const portao = this.value.trim().toLowerCase();
         const campoSetor = document.getElementById('campo_setor');
-
         const mapaSetores = {
-            "28": "Setor 1", "23": "Setor 1",
-            "24": "Setor 1", "25": "Setor 1", "26": "Setor 1",
-            "03": "Setor 2", "3": "Setor 2",
-            "08": "Setor 2", "8": "Setor 2",
-            "09": "Setor 6", "9": "Setor 6",
-            "10": "Setor 6", "11": "Setor 5",
+            "28": "Setor 1", "23": "Setor 1", "24": "Setor 1", "25": "Setor 1", "26": "Setor 1",
+            "03": "Setor 2", "3": "Setor 2", "08": "Setor 2", "8": "Setor 2",
+            "09": "Setor 6", "9": "Setor 6", "10": "Setor 6", "11": "Setor 5",
             "12": "Setor 4", "18": "Setor 3", "21": "Setor 3"
         };
-
         campoSetor.value = mapaSetores[portao] || ""; 
     });
-
 </script>
-
 {% endblock %}
