@@ -31,6 +31,8 @@
     </style>
 
     {% set fechado = reg and reg.hora_saida %}
+    {# Identifica se já tem assinatura salva #}
+    {% set ja_assinado = reg and reg.assinatura_data and reg.assinatura_data != "None" and reg.assinatura_data != "" %}
 
     <div class="grid">
         <div class="sessao">📍 DADOS INICIAIS (HORARIO / DATA)</div>
@@ -160,84 +162,38 @@
             <input type="text" name="colaborador_setor" value="{{ reg.colaborador_setor if reg else '' }}" {% if reg %}required{% endif %} {{ 'readonly' if fechado }}>
         </div>
 
-<div class="sessao">📝 OBSERVAÇÕES E ASSINATURAS</div>
-<div class="full">
-    <label>Observações: (Campo aberto para novas anotações)</label>
-    <textarea name="observacoes" id="obs_campo" placeholder="Observações adicionais...">{{ reg.observacoes if reg else '' }}</textarea>
-</div>
+        <div class="sessao">📝 OBSERVAÇÕES E ASSINATURAS</div>
+        <div class="full">
+            <label>Observações: (Campo aberto para novas anotações)</label>
+            <textarea name="observacoes" id="obs_campo" placeholder="Observações adicionais...">{{ reg.observacoes if reg else '' }}</textarea>
+        </div>
 
-<div class="full">
-    <label>Assinatura Prestador de Serviço:</label>
-    <div class="area-assinatura active" style="width: 100%;">
-        
-        {# 1ª Condição: Se já existe a imagem da assinatura no banco #}
-        {% if reg and reg.assinatura_data and reg.assinatura_data != "None" and reg.assinatura_data != "" %}
-            <div style="text-align: center; padding: 10px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px;">
-                <img src="{{ reg.assinatura_data }}" alt="Assinatura" style="max-width: 100%; max-height: 150px;">
-                <p style="color: #28a745; font-weight: bold; margin-top: 5px;">✅ ASSINATURA JÁ INSERIDA</p>
+        <div class="full">
+            <label>Assinatura Prestador de Serviço:</label>
+            <div class="area-assinatura active" style="width: 100%;">
+                
+                {# ETAPA 2: SE JÁ TEM ASSINATURA OU ESTÁ FECHADO, MOSTRA O SELO #}
+                {% if ja_assinado or fechado %}
+                    <div style="text-align: center; padding: 20px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px;">
+                        {% if ja_assinado and "data:image" in reg.assinatura_data %}
+                            <img src="{{ reg.assinatura_data }}" alt="Assinatura" style="max-width: 100%; max-height: 120px;">
+                        {% elif ja_assinado %}
+                            <p><strong>{{ reg.assinatura_data }}</strong></p>
+                        {% endif %}
+                        <p style="color: #28a745; font-weight: bold; margin-top: 10px;">✅ ASSINATURA JÁ INSERIDA</p>
+                    </div>
+                    <input type="hidden" name="assinatura_data" id="input_assinatura" value="{{ reg.assinatura_data if reg else '' }}">
+
+                {# ETAPA 1: NOVO REGISTRO / SEM ASSINATURA #}
+                {% else %}
+                    <canvas id="canvas-principal" style="width: 100%; border: 1px solid #ccc; border-radius: 8px; height: 180px; background: #fff;"></canvas>
+                    <div style="text-align: center; margin-top: 10px;">
+                        <button type="button" class="btn-limpar" onclick="signaturePadPrincipal.clear()">🖌️ Limpar Quadro</button>
+                    </div>
+                    <input type="hidden" name="assinatura_data" id="input_assinatura" value="">
+                {% endif %}
             </div>
-            <input type="hidden" name="assinatura_data" id="input_assinatura" value="{{ reg.assinatura_data }}">
-
-        {# 2ª Condição: Se o Python enviou fechado=True (centralizado e ajustado) #}
-        {% elif fechado %}
-            <div style="display: flex; justify-content: center; align-items: center; width: 100%; box-sizing: border-box; padding: 40px 15px; border: 2px dashed #000; background: #f9f9f9; text-align: center; border-radius: 8px; min-height: 180px;">
-                <span style="font-weight: bold; font-size: 1.2em; color: #333;">🔒 REGISTRO ENCERRADO</span>
-            </div>
-            <input type="hidden" name="assinatura_data" value="{{ reg.assinatura_data if reg else '' }}">
-
-        {# 3ª Condição: Se não houver nada, mostra o quadro para assinar #}
-        {% else %}
-            <canvas id="canvas-principal" style="width: 100%; border: 1px solid #ccc; border-radius: 8px; height: 180px; background: #fff;"></canvas>
-            <div style="text-align: center; margin-top: 10px;">
-                <button type="button" class="btn-limpar" onclick="signaturePadPrincipal.clear()">🖌️ Limpar Quadro</button>
-            </div>
-            <input type="hidden" name="assinatura_data" id="input_assinatura" value="">
-        {% endif %}
-
-    </div>
-</div>
-
-<script>
-    // Coloque este código dentro do seu eventListener de submit
-    form.addEventListener('submit', function(e) {
-        if (btnEnviar.hasAttribute('disabled')) { e.preventDefault(); return false; }
-        
-        const qsoFechado = {{ 'true' if fechado else 'false' }};
-        
-        if (qsoFechado) { 
-            travarBotao(); 
-            return true; 
-        }
-
-        // Verifica se o objeto SignaturePad existe antes de usar (evita erro de syntax)
-        if (typeof signaturePadPrincipal !== 'undefined' && signaturePadPrincipal !== null) {
-            if (!signaturePadPrincipal.isEmpty()) {
-                inputAssinatura.value = signaturePadPrincipal.toDataURL();
-            }
-        }
-
-        // Validação de assinatura ou justificativa
-        if (!inputAssinatura.value || inputAssinatura.value.trim() === "" || inputAssinatura.value === "None") {
-            const querJustificar = confirm("⚠️ Assinatura não detectada! Deseja informar uma JUSTIFICATIVA?");
-            
-            if (querJustificar) {
-                const just = prompt("Informe a JUSTIFICATIVA:");
-                if (just && just.trim().length > 3) {
-                    inputAssinatura.value = "JUSTIFICATIVA: " + just;
-                } else {
-                    alert("❌ Justificativa inválida.");
-                    e.preventDefault(); 
-                    return false;
-                }
-            } else {
-                e.preventDefault(); 
-                return false;
-            }
-        }
-
-        travarBotao();
-    });
-</script>
+        </div>
 
         <div class="sessao">👥 AJUDANTES ADICIONAIS</div>
         <div id="lista-colaboradores" class="full"></div>
@@ -276,40 +232,40 @@
     form.addEventListener('submit', function(e) {
         if (btnEnviar.hasAttribute('disabled')) { e.preventDefault(); return false; }
 
-        const qsoFechado = {{ 'true' if fechado else 'false' }};
-        
-        // Se for segundo salve (apenas atualizar obs), libera direto
-        if (qsoFechado) { 
+        // Variáveis de controle do Jinja
+        const jaAssinado = {{ 'true' if ja_assinado else 'false' }};
+        const registroFechado = {{ 'true' if fechado else 'false' }};
+
+        // SE JÁ FOI ASSINADO OU ESTÁ FECHADO, LIBERA O ENVIO SEM VALIDAR NADA
+        if (jaAssinado || registroFechado) { 
             travarBotao(); 
             return true; 
         }
 
-        // 1. Tenta pegar a assinatura do quadro principal
+        // --- ETAPA DE VALIDAÇÃO (SÓ OCORRE NA PRIMEIRA VEZ) ---
+        
+        // Pega a assinatura do canvas se existir
         if (signaturePadPrincipal && !signaturePadPrincipal.isEmpty()) {
             inputAssinatura.value = signaturePadPrincipal.toDataURL();
         }
 
-        // 2. Lógica de Validação ÚNICA (Sem repetição)
+        // Validação obrigatória na primeira etapa
         if (!inputAssinatura.value || inputAssinatura.value.trim() === "") {
             const querJustificar = confirm("⚠️ Assinatura não detectada! Deseja informar uma JUSTIFICATIVA?");
-            
             if (querJustificar) {
                 const just = prompt("Informe a JUSTIFICATIVA:");
                 if (just && just.trim().length > 3) {
                     inputAssinatura.value = "JUSTIFICATIVA: " + just;
                 } else {
                     alert("❌ Justificativa inválida ou muito curta.");
-                    e.preventDefault(); 
-                    return false;
+                    e.preventDefault(); return false;
                 }
             } else {
-                // Se não quis justificar e não assinou, cancela o envio
-                e.preventDefault(); 
-                return false;
+                e.preventDefault(); return false;
             }
         }
 
-        // 3. Processa Acompanhante e Ajudantes Extras
+        // Processa as assinaturas dos ajudantes extras
         if (padAcompanhante && !padAcompanhante.isEmpty()) {
             document.getElementById('input_assinatura_acompanhante').value = padAcompanhante.toDataURL();
         }
