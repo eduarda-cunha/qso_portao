@@ -130,6 +130,8 @@
 
 <script>
 function verDetalhes(d) {
+    console.log("Dados recebidos:", d); // Isso ajuda a ver erros no F12
+
     const mapa = {
         'id': 'ID', 
         'data': 'Data', 
@@ -143,29 +145,74 @@ function verDetalhes(d) {
         'criado_por': 'Registrado por',
         'observacoes': 'Observações'
     };
-    
+
     let html = '';
+
+    // 1. Gera os campos simples
     for (let [key, label] of Object.entries(mapa)) {
         html += `<div class="info-box"><label>${label}</label><span>${d[key] || '---'}</span></div>`;
     }
 
-    // Assinatura do Prestador
+    // 2. Seção de Ajudantes (Fora do loop)
+    html += `<div class="info-box" style="grid-column: span 2; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;">
+                <label style="display:block; margin-bottom: 5px; font-weight: bold;">AJUDANTES ADICIONAIS:</label>`;
+
+    // Verificação robusta do JSON
+    if (d.colaboradores_json && d.colaboradores_json !== "[]" && d.colaboradores_json !== "None" && d.colaboradores_json.length > 5) {
+        try {
+            const ajudantes = JSON.parse(d.colaboradores_json);
+            html += `<button type="button" onclick="const lista = this.nextElementSibling; lista.style.display = lista.style.display === 'none' ? 'block' : 'none'" 
+                        style="width: 100%; padding: 8px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                        👥 Visualizar (${ajudantes.length}) Colaboradores
+                     </button>
+                     <div style="display: none; margin-top: 10px; background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 10px;">`;
+            
+            ajudantes.forEach(aj => {
+                const esImg = aj.assinatura && aj.assinatura.includes('data:image');
+                html += `<div style="margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
+                            <p style="margin: 0; font-size: 13px;"><strong>Nome:</strong> ${aj.nome}</p>
+                            <p style="margin: 0; font-size: 12px; color: #555;"><strong>Pulseira:</strong> ${aj.pulseira_ajudante}</p>
+                            <div style="text-align: center; margin-top: 5px;">
+                                ${esImg ? `<img src="${aj.assinatura}" style="max-height: 40px; border: 1px solid #eee;">` 
+                                        : `<span style="font-size: 11px; color: #d9534f; font-style: italic;">Justificativa: ${aj.assinatura || 'Não informada'}</span>`}
+                            </div>
+                         </div>`;
+            });
+            html += `</div>`;
+        } catch (err) {
+            html += `<p style="font-size: 12px; color: #999;">⚠️ Dados de ajudantes formatados incorretamente.</p>`;
+        }
+    } else {
+        html += `<p style="font-size: 12px; color: #999; font-style: italic; text-align: center;">🚫 Nenhum colaborador adicional registrado.</p>`;
+    }
+    html += `</div>`;
+
+    // 3. Assinatura Principal
     if (d.assinatura_path) {
-        const urlImg = `/static/assinaturas/${d.assinatura_path}`;
+        // Ajuste aqui se o caminho no banco for apenas o nome do arquivo ou a URL completa
+        const urlImg = d.assinatura_path.includes('data:image') ? d.assinatura_path : `/static/assinaturas/${d.assinatura_path}`;
         html += `
             <div class="info-box" style="grid-column: span 2; text-align: center; margin-top: 15px; border-top: 2px solid #eee; padding-top: 15px;">
                 <label>Assinatura Digital</label>
                 <img src="${urlImg}" style="max-width: 100%; max-height: 150px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">
                 <br>
-                <a href="${urlImg}" download="Assinatura_${d.nome_prestador}.png" 
+                <a href="${urlImg}" download="Assinatura_${d.nome_prestador || 'Registro'}.png" 
                    style="display: inline-block; margin-top: 10px; padding: 8px 15px; background: #000; color: #FFD700; text-decoration: none; border-radius: 5px; font-size: 12px; font-weight: bold;">
                    📥 BAIXAR ASSINATURA
                 </a>
             </div>`;
     }
-    
-    document.getElementById('detalhesCorpo').innerHTML = html;
-    document.getElementById('modalInfo').style.display = 'block';
+
+    // 4. Injeção e Exibição (O coração da função)
+    const detalhesCorpo = document.getElementById('detalhesCorpo');
+    const modalInfo = document.getElementById('modalInfo');
+
+    if (detalhesCorpo && modalInfo) {
+        detalhesCorpo.innerHTML = html;
+        modalInfo.style.display = 'block';
+    } else {
+        alert("Erro técnico: Elementos do modal não encontrados na página.");
+    }
 }
 
 function fecharModal() { 

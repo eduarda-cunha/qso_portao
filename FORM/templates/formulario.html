@@ -32,8 +32,7 @@
 
     {% set fechado = reg and reg.hora_saida %}
     {# Identifica se já tem assinatura salva #}
-    {% set ja_assinado = reg and reg.assinatura_data and reg.assinatura_data != "None" and reg.assinatura_data != "" %}
-
+    {% set ja_assinado = reg and reg.assinatura_path and reg.assinatura_path|string|trim != "" and reg.assinatura_path != "None" %}
     <div class="grid">
         <div class="sessao">📍 DADOS INICIAIS (HORARIO / DATA)</div>
 
@@ -146,14 +145,34 @@
         </div>
 
         <div class="full">
-            <label>Colaborador que acompanhou: 
-                {% if not fechado %}<button type="button" class="btn-caneta" onclick="abrirAssinatura('area-acompanhante')">📝 Abrir Quadro</button>{% endif %}
+            <label>Colaborador que acompanhou:
+                {% if not fechado and (not reg or not reg.assinatura_acompanhante) %}
+                    <button type="button" class="btn-caneta" onclick="abrirAssinatura('area-acompanhante')">📝 Abrir Quadro</button>
+                {% endif %}
             </label>
-            <input type="text" name="colaborador_acompanhou" value="{{ reg.colaborador_acompanhou if reg else '' }}" {{ 'readonly' if fechado }}>
-            <div id="area-acompanhante" class="area-assinatura">
-                <canvas id="canvas-acompanhante"></canvas><br>
-                <button type="button" class="btn-limpar" onclick="padAcompanhante.clear()">🧹 Limpar</button>
-                <input type="hidden" name="assinatura_acompanhante" id="input_assinatura_acompanhante">
+            
+            <input type="text" name="colaborador_acompanhou" 
+                value="{{ reg.colaborador_acompanhou if reg else '' }}" 
+                class="full" {{ 'readonly' if fechado }}>
+
+            <div id="area-acompanhante" class="area-assinatura {{ 'active' if reg and reg.assinatura_acompanhante }}">
+                
+                {# Se já existe assinatura salva #}
+                {% if reg and reg.assinatura_acompanhante and reg.assinatura_acompanhante != "" %}
+                    <div style="text-align: center; padding: 15px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px;">
+                        <img src="{{ reg.assinatura_acompanhante }}" alt="Assinatura" style="max-height: 100px; border: 1px solid #eee;">
+                        <p style="color: #28a745; font-weight: bold; margin-top: 10px;">✅ ASSINATURA JÁ INSERIDA</p>
+                        <input type="hidden" name="assinatura_acompanhante" value="{{ reg.assinatura_acompanhante }}">
+                    </div>
+                
+                {# Se é um novo registro ou está sem assinatura #}
+                {% else %}
+                    <canvas id="canvas-acompanhante"></canvas><br>
+                    {% if not fechado %}
+                        <button type="button" class="btn-limpar" onclick="padAcompanhante.clear()">🧹 Limpar</button>
+                    {% endif %}
+                    <input type="hidden" name="assinatura_acompanhante" id="input_assinatura_acompanhante">
+                {% endif %}
             </div>
         </div>
 
@@ -167,22 +186,38 @@
             <label>Observações: (Campo aberto para novas anotações)</label>
             <textarea name="observacoes" id="obs_campo" placeholder="Observações adicionais...">{{ reg.observacoes if reg else '' }}</textarea>
         </div>
-
+        
         <div class="full">
             <label>Assinatura Prestador de Serviço:</label>
             <div class="area-assinatura active" style="width: 100%;">
-                
-                {# ETAPA 2: SE JÁ TEM ASSINATURA OU ESTÁ FECHADO, MOSTRA O SELO #}
-                {% if ja_assinado or fechado %}
-                    <div style="text-align: center; padding: 20px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px;">
-                        {% if ja_assinado and "data:image" in reg.assinatura_data %}
-                            <img src="{{ reg.assinatura_data }}" alt="Assinatura" style="max-width: 100%; max-height: 120px;">
-                        {% elif ja_assinado %}
-                            <p><strong>{{ reg.assinatura_data }}</strong></p>
+
+                {# ETAPA 2: SE JÁ TEM ASSINATURA OU ESTÁ FECHADO #}
+                {% if (reg and reg.assinatura_path) or fechado %}                   
+                <div style="text-align: center; padding: 20px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px;">
+                    
+                    {% if reg and reg.assinatura_path %}
+                        {# Se a assinatura for um arquivo salvo (contém .png) #}
+                        {% if ".png" in reg.assinatura_path or ".jpg" in reg.assinatura_path %}
+                            <img src="{{ url_for('static', filename='assinaturas/' + reg.assinatura_path) }}" 
+                                alt="Assinatura" 
+                                style="max-width: 100%; max-height: 120px; border: 1px solid #eee;">
+                        
+                        {# Se for Base64 (estilo antigo ou fallback) #}
+                        {% elif "data:image" in reg.assinatura_path %}
+                            <img src="{{ reg.assinatura_path }}" alt="Assinatura" style="max-width: 100%; max-height: 120px;">
+                        
+                        {# Se for apenas texto (Justificativa) #}
+                        {% else %}
+                            <p><strong>{{ reg.assinatura_path }}</strong></p>
                         {% endif %}
-                        <p style="color: #28a745; font-weight: bold; margin-top: 10px;">✅ ASSINATURA JÁ INSERIDA</p>
-                    </div>
-                    <input type="hidden" name="assinatura_data" id="input_assinatura" value="{{ reg.assinatura_data if reg else '' }}">
+
+                        <p style="color: #28a745; font-weight: bold; margin-top: 10px;">
+                            ✅ ASSINATURA JÁ INSERIDA
+                        </p>
+                    {% endif %}
+
+                    <input type="hidden" name="assinatura_data" id="input_assinatura" value="JA_ASSINADO">
+                </div>
 
                 {# ETAPA 1: NOVO REGISTRO / SEM ASSINATURA #}
                 {% else %}
@@ -202,8 +237,10 @@
             <button type="button" class="btn-add" onclick="adicionarColaborador()"> + Adicionar Outro Colaborador</button>
         </div>
         {% endif %}
-        <input type="hidden" name="colaboradores_json" id="colaboradores_json">
+        <input type="hidden" name="colaboradores_json" id="colaboradores_json" value='{{ reg.colaboradores_json if reg and reg.colaboradores_json else "[]" }}'>
+        <input type="hidden" id="registro_fechado" value="{{ 'true' if fechado else 'false' }}">
     </div>
+
 
     <div class="full">
         {% if fechado %}
@@ -226,6 +263,9 @@
     const canvasAcompanhante = document.getElementById('canvas-acompanhante');
     const padAcompanhante = canvasAcompanhante ? new SignaturePad(canvasAcompanhante) : null;
 
+    const jaAssinado = {{ 'true' if ja_assinado else 'false' }};
+    const registroFechado = {{ 'true' if fechado else 'false' }};
+
     let contador = 0;
     let assinaturasExtras = {};
 
@@ -240,16 +280,10 @@
         if (jaAssinado || registroFechado) { 
             travarBotao(); 
             return true; 
-        }
-
-        // --- ETAPA DE VALIDAÇÃO (SÓ OCORRE NA PRIMEIRA VEZ) ---
-        
-        // Pega a assinatura do canvas se existir
+        }        
         if (signaturePadPrincipal && !signaturePadPrincipal.isEmpty()) {
             inputAssinatura.value = signaturePadPrincipal.toDataURL();
         }
-
-        // Validação obrigatória na primeira etapa
         if (!inputAssinatura.value || inputAssinatura.value.trim() === "") {
             const querJustificar = confirm("⚠️ Assinatura não detectada! Deseja informar uma JUSTIFICATIVA?");
             if (querJustificar) {
@@ -264,22 +298,67 @@
                 e.preventDefault(); return false;
             }
         }
-
-        // Processa as assinaturas dos ajudantes extras
         if (padAcompanhante && !padAcompanhante.isEmpty()) {
             document.getElementById('input_assinatura_acompanhante').value = padAcompanhante.toDataURL();
         }
         
-        let listaFinal = [];
+let listaFinal = [];
+        let erroValidacao = false;
+
         document.querySelectorAll('.colaborador-item').forEach(item => {
+            if (erroValidacao) return; 
+
             const id = item.id.replace('colab-container-', '');
+            const nome = item.querySelector('.extra-nome').value.trim();
+            const pulseira = item.querySelector('.extra-pulseira').value.trim();
+            const nasc = item.querySelector('.extra-nasc').value;
+            const pad = assinaturasExtras[id];
+
+            // 1. VALIDAÇÃO DA PULSEIRA (OBRIGATÓRIA)
+            if (pulseira === "") {
+                alert(`❌ Informe a pulseira do ajudante: ${nome || 'Ajudante'}`);
+                item.querySelector('.extra-pulseira').focus();
+                erroValidacao = true;
+                return;
+            }
+
+            let assinaturaValor = "";
+
+            // 2. VALIDAÇÃO DA ASSINATURA OU JUSTIFICATIVA
+            if (pad && !pad.isEmpty()) {
+                assinaturaValor = pad.toDataURL();
+            } else {
+                const querJustificar = confirm(`⚠️ Assinatura de ${nome || 'Ajudante'} não detectada! Deseja informar uma JUSTIFICATIVA?`);
+                if (querJustificar) {
+                    const motivo = prompt(`Informe o motivo da falta de assinatura para ${nome}:`);
+                    if (motivo && motivo.trim().length > 3) {
+                        assinaturaValor = "JUSTIFICATIVA: " + motivo;
+                    } else {
+                        alert("❌ Justificativa inválida ou muito curta.");
+                        erroValidacao = true;
+                        return;
+                    }
+                } else {
+                    alert(`❌ É necessário a assinatura ou justificativa para o ajudante ${nome}.`);
+                    erroValidacao = true;
+                    return;
+                }
+            }
+
             listaFinal.push({
-                nome: item.querySelector('.extra-nome').value,
-                pulseira_ajudante: item.querySelector('.extra-pulseira').value,
-                nasc: item.querySelector('.extra-nasc').value,
-                assinatura: assinaturasExtras[id].isEmpty() ? "" : assinaturasExtras[id].toDataURL()
+                nome: nome,
+                pulseira_ajudante: pulseira,
+                nasc: nasc,
+                assinatura: assinaturaValor
             });
         });
+
+        if (erroValidacao) {
+            e.preventDefault();
+            return false;
+        }
+
+        // SALVA O JSON FINAL PARA O GESTOR
         document.getElementById('colaboradores_json').value = JSON.stringify(listaFinal);
 
         travarBotao();
@@ -314,27 +393,88 @@
         canvas.getContext("2d").scale(ratio, ratio);
     }
 
-    function adicionarColaborador() {
+    function adicionarColaborador(dados = null) {
+        // 1. Verifica se o formulário deve estar bloqueado
+        const campoFechado = document.getElementById('registro_fechado');
+        const estaFechado = campoFechado && campoFechado.value === 'true';
+
         contador++;
         const div = document.createElement('div');
         div.className = 'colaborador-item';
         div.id = `colab-container-${contador}`;
+
+        const nome = dados ? dados.nome : '';
+        const pulseira = dados ? dados.pulseira_ajudante : '';
+        const nasc = dados ? dados.nasc : '';
+        const assinatura = dados ? dados.assinatura : '';
+
+        // 2. Definimos se mostramos o botão de remover e se os inputs são apenas leitura
+        const btnRemover = estaFechado ? '' : `<button type="button" class="btn-remover" onclick="removerColaborador(${contador})">✖</button>`;
+        const campoReadonly = estaFechado ? 'readonly' : '';
+        
+        // Verifica se já tem assinatura para mostrar o selo verde
+        const temAssinatura = assinatura && assinatura.startsWith('data:image');
+
         div.innerHTML = `
-            <button type="button" class="btn-remover" onclick="removerColaborador(${contador})">✖</button>
+            ${btnRemover}
             <div class="grid">
-                <div class="full"><label>Nome Completo</label><input type="text" class="extra-nome" required></div>
-                <div><label class="label-vermelha">Pulseira do Ajudante</label><input type="number" class="extra-pulseira pulseira-input"></div>
-                <div><label>Data Nascimento</label><input type="date" class="extra-nasc" onchange="verificarIdade(this, 'aviso_extra_${contador}')" required><div id="aviso_extra_${contador}" class="alerta-menor">⚠️ AJUDANTE MENOR DE IDADE!</div></div>
-                <div class="full"><label>Assinatura Ajudante</label><div class="area-assinatura active"><canvas id="canvas-extra-${contador}"></canvas><br><button type="button" class="btn-limpar" onclick="assinaturasExtras[${contador}].clear()">🧹 Limpar</button></div></div>
+                <div class="full"><label>Nome Completo</label>
+                    <input type="text" class="extra-nome" required value="${nome}" ${campoReadonly}>
+                </div>
+                <div><label class="label-vermelha">Pulseira do Ajudante</label>
+                    <input type="number" class="extra-pulseira pulseira-input" required value="${pulseira}" ${campoReadonly}>
+                </div>
+                <div><label>Data Nascimento</label>
+                    <input type="date" class="extra-nasc" value="${nasc}" onchange="verificarIdade(this, 'aviso_extra_${contador}')" required ${campoReadonly}>
+                    <div id="aviso_extra_${contador}" class="alerta-menor">⚠️ AJUDANTE MENOR DE IDADE!</div>
+                </div>
+                <div class="full"><label>Assinatura Ajudante</label>
+                    <div class="area-assinatura active" style="text-align: center; border: 1px solid #eee; padding: 10px; border-radius: 5px; background: #fafafa;">
+                        
+                        ${temAssinatura ? `
+                            <div style="margin-bottom: 10px;">
+                                <img src="${assinatura}" style="max-height: 100px; border: 1px solid #ddd;"><br>
+                                <span style="color: #28a745; font-weight: bold;">✅ ASSINATURA JÁ INSERIDA</span>
+                            </div>
+                        ` : `
+                            <canvas id="canvas-extra-${contador}"></canvas><br>
+                            ${estaFechado ? '' : `<button type="button" class="btn-limpar" onclick="assinaturasExtras[${contador}].clear()">🧹 Limpar</button>`}
+                        `}
+
+                        ${assinatura.startsWith('JUSTIFICATIVA') ? `<p style="color:red; font-size:12px; margin-top:5px;"><b>${assinatura}</b></p>` : ''}
+                    </div>
+                </div>
             </div>`;
+
         document.getElementById('lista-colaboradores').appendChild(div);
-        const canvas = document.getElementById(`canvas-extra-${contador}`);
-        ajustarCanvas(canvas);
-        assinaturasExtras[contador] = new SignaturePad(canvas);
+
+        // 3. Só inicializamos o SignaturePad se NÃO estiver fechado e NÃO tiver assinatura salva
+        if (!estaFechado && !temAssinatura) {
+            const canvas = document.getElementById(`canvas-extra-${contador}`);
+            ajustarCanvas(canvas);
+            assinaturasExtras[contador] = new SignaturePad(canvas);
+        }
     }
 
-    function removerColaborador(id) { document.getElementById(`colab-container-${id}`).remove(); delete assinaturasExtras[id]; }
+    document.addEventListener('DOMContentLoaded', function() {
+        const campoJson = document.getElementById('colaboradores_json');
+        
+        // LINHA DE TESTE: Aperte F12 no navegador para ver o que aparece aqui
+        console.log("Dados vindos do banco:", campoJson ? campoJson.value : "Campo não encontrado");
 
+        if (campoJson && campoJson.value && campoJson.value !== "[]" && campoJson.value !== "None") {
+            try {
+                const ajudantesExistentes = JSON.parse(campoJson.value);
+                ajudantesExistentes.forEach(ajudante => {
+                    adicionarColaborador(ajudante);
+                });
+            } catch (e) {
+                console.error("Erro ao processar ajudantes salvos", e);
+            }
+        }
+    });
+
+    function removerColaborador(id) { document.getElementById(`colab-container-${id}`).remove(); delete assinaturasExtras[id]; }
     window.addEventListener("load", () => { 
         if (canvasPrincipal) ajustarCanvas(canvasPrincipal); 
         if (canvasAcompanhante) ajustarCanvas(canvasAcompanhante); 

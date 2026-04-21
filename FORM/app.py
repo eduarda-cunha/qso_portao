@@ -176,12 +176,10 @@ def formulario(id=None):
         return redirect(url_for('index'))
 
     is_fechado = False
-    
     if registro:
-        if isinstance(registro, dict):
-            is_fechado = bool(registro.get('assinatura_data'))
-        else:
-            is_fechado = bool(getattr(registro, 'assinatura_data', None))
+            # Verifica se o campo de assinatura do prestador ou a hora de saída já existem
+            if registro['assinatura_path'] or registro['hora_saida']:
+            is_fechado = True
 
     return render_template(
         'formulario.html',
