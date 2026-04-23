@@ -179,7 +179,7 @@ def formulario(id=None):
     if registro:
             # Verifica se o campo de assinatura do prestador ou a hora de saída já existem
             if registro['assinatura_path'] or registro['hora_saida']:
-            is_fechado = True
+                is_fechado = True
 
     return render_template(
         'formulario.html',
